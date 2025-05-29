@@ -1,0 +1,44 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Ethics Check MCP Server Overview
+
+## Project Purpose
+This is an **Ethics Check MCP (Model Context Protocol) Server** that provides ethical oversight and guidance for AI conversations. It's inspired by the vibe-check pattern interrupt methodology but adapted for ethical supervision.
+
+## Core Architecture
+The server implements three main ethical oversight tools:
+
+### 🛡️ ethics_check
+- **Purpose**: Comprehensive ethical analysis of conversations
+- **Implementation**: [src/tools/ethicsCheck.ts](mdc:src/tools/ethicsCheck.ts)
+- **Function**: Reviews conversations for privacy violations, bias, misinformation, harmful content, manipulation, consent issues, transparency concerns, and fairness issues
+
+### 🧭 ethics_guide  
+- **Purpose**: Proactive ethical guidance for complex scenarios
+- **Implementation**: [src/tools/ethicsGuide.ts](mdc:src/tools/ethicsGuide.ts)
+- **Function**: Provides advice using multiple ethical frameworks (consequentialism, deontology, virtue ethics, care ethics, justice)
+
+### 📚 ethics_learn
+- **Purpose**: Pattern recognition and learning system
+- **Implementation**: [src/tools/ethicsLearn.ts](mdc:src/tools/ethicsLearn.ts)
+- **Function**: Logs ethical concerns, builds knowledge base, tracks statistics across ethical categories
+
+## Key Files
+- **Main Server**: [src/index.ts](mdc:src/index.ts) - MCP server implementation with tool registration and handlers
+- **AI Integration**: [src/utils/gemini.ts](mdc:src/utils/gemini.ts) - Gemini AI integration for ethical analysis
+- **Data Storage**: [src/utils/storage.ts](mdc:src/utils/storage.ts) - Persistent storage for ethical concerns and patterns
+- **Configuration**: [package.json](mdc:package.json) - Dependencies and build scripts
+- **Environment**: [env.example](mdc:env.example) - Required environment variables
+
+## Ethical Categories
+The system tracks 9 standardized ethical concern categories defined in [src/utils/storage.ts](mdc:src/utils/storage.ts):
+- Privacy Violation, Bias and Discrimination, Misinformation, Harmful Content, Manipulation, Consent Issues, Transparency Concerns, Fairness Issues, Other
+
+## Build & Deployment
+- **Build**: `npm run build` - Compiles TypeScript to [build/](mdc:build/) directory
+- **Start**: `npm start` - Runs the compiled server
+- **Development**: `npm run dev` - Auto-reload development mode
+- **Requirements**: Node.js 18+, GEMINI_API_KEY environment variable

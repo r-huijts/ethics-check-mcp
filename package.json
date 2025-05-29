@@ -1,0 +1,48 @@
+{
+  "name": "ethics-check-mcp",
+  "version": "0.1.0",
+  "description": "Ethics Check MCP Server - Ethical oversight and critical thinking analysis for AI conversations",
+  "type": "module",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "start": "node build/index.js",
+    "dev": "tsc --watch",
+    "test": "npm run build && node tests/gemini.test.js",
+    "test:gemini": "npm run build && node tests/gemini.test.js",
+    "test:curl": "./tests/curl-test.sh",
+    "test:all": "npm run test && npm run test:curl",
+    "test:quick": "npm run build && GEMINI_API_KEY=test_key node tests/gemini.test.js"
+  },
+  "keywords": [
+    "mcp",
+    "ethics",
+    "ai",
+    "claude",
+    "bias",
+    "critical-thinking",
+    "confirmation-bias",
+    "oversight"
+  ],
+  "author": "Ethics Check MCP",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "build"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/ethics-check-mcp.git"
+  }
+} 

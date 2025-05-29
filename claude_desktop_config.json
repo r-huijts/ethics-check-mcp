@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "ethics-check": {
+      "command": "node",
+      "args": [
+        "/REPLACE/WITH/ABSOLUTE/PATH/TO/ethics-check-mcp/build/index.js"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "REPLACE_WITH_YOUR_ACTUAL_GEMINI_API_KEY"
+      }
+    }
+  }
+} 

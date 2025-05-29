@@ -1,0 +1,67 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# MCP Integration Patterns
+
+## MCP Server Architecture
+This project implements a **Model Context Protocol (MCP) Server** using the official MCP SDK. The server follows standard MCP patterns for tool registration and execution.
+
+## Core MCP Components
+
+### Server Initialization
+- **Server Instance**: Created in [src/index.ts](mdc:src/index.ts) with name "ethics-check" and version "0.1.0"
+- **Transport**: Uses `StdioServerTransport` for communication with Claude Desktop
+- **Capabilities**: Declares `tools` capability to expose ethical oversight functions
+
+### Tool Registration Pattern
+Tools are registered via `ListToolsRequestSchema` handler in [src/index.ts](mdc:src/index.ts):
+```typescript
+{
+  name: "tool_name",
+  description: "Tool description for Claude",
+  inputSchema: {
+    type: "object",
+    properties: { /* JSON Schema */ },
+    required: ["required_fields"]
+  }
+}
+```
+
+### Tool Execution Pattern
+Tool calls are handled via `CallToolRequestSchema` handler:
+1. **Parameter Validation**: Check required fields and types
+2. **Input Transformation**: Convert MCP args to typed interfaces
+3. **Tool Execution**: Call implementation function
+4. **Response Formatting**: Return structured markdown content
+
+## MCP-Specific Implementation Details
+
+### Input/Output Interfaces
+Each tool defines TypeScript interfaces in [src/tools/](mdc:src/tools):
+- `ToolNameInput`: Parameters expected from MCP client
+- `ToolNameOutput`: Structured response from tool logic
+- Conversion between MCP args and typed inputs happens in [src/index.ts](mdc:src/index.ts)
+
+### Error Handling
+- **McpError**: Use official MCP error types (`ErrorCode.InvalidParams`, `ErrorCode.MethodNotFound`)
+- **Validation**: Check required parameters before tool execution
+- **Graceful Degradation**: Fallback responses when AI parsing fails
+
+### Response Formatting
+- **Content Type**: Always return `text` content type
+- **Markdown Format**: Use structured markdown for readable responses
+- **Consistent Structure**: Headers, sections, and formatting patterns across tools
+
+## Claude Desktop Integration
+- **Configuration**: [claude_desktop_config.json](mdc:claude_desktop_config.json) shows integration setup
+- **Environment**: Pass `GEMINI_API_KEY` through MCP server environment
+- **Path**: Update args array with absolute path to compiled [build/index.js](mdc:build/index.js)
+
+## MCP Best Practices Applied
+1. **Tool Naming**: Use underscore convention (`ethics_check`, `ethics_guide`, `ethics_learn`)
+2. **Schema Validation**: Comprehensive JSON schemas with proper types and descriptions
+3. **Error Messages**: Clear, actionable error messages for invalid inputs
+4. **Documentation**: Rich descriptions for tools and parameters
+5. **Stateless Design**: Each tool call is independent (session tracking via optional sessionId)

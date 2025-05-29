@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Development Workflow Guide
+
+## Setup & Installation
+1. **Install Dependencies**: `npm install` - Installs all required packages including MCP SDK, Gemini AI, and TypeScript
+2. **Environment Setup**: Copy [env.example](mdc:env.example) to `.env` and add your `GEMINI_API_KEY`
+3. **Build Project**: `npm run build` - Compiles TypeScript and sets executable permissions
+
+## Development Commands
+- **Development Mode**: `npm run dev` - Auto-recompiles and restarts on file changes
+- **Build Only**: `npm run build` - Compiles TypeScript to [build/](mdc:build) directory
+- **Start Server**: `npm start` - Runs the compiled server (requires GEMINI_API_KEY)
+- **Test Build**: `GEMINI_API_KEY=test_key node build/index.js` - Test server startup
+
+## Code Structure Guidelines
+
+### Adding New Tools
+1. Create tool file in [src/tools/](mdc:src/tools) following the pattern of [ethicsCheck.ts](mdc:src/tools/ethicsCheck.ts)
+2. Define Input/Output interfaces
+3. Implement async tool function with Gemini AI integration
+4. Register tool in [src/index.ts](mdc:src/index.ts) `ListToolsRequestSchema` handler
+5. Add tool execution case in `CallToolRequestSchema` handler
+
+### Modifying Ethical Categories
+- Update `ETHICAL_CATEGORIES` array in [src/utils/storage.ts](mdc:src/utils/storage.ts)
+- Categories are used across all tools for consistency
+- Changes affect tool schemas in [src/index.ts](mdc:src/index.ts)
+
+### AI Prompt Engineering
+- Ethical analysis prompts are in individual tool files
+- Use structured JSON responses for consistent parsing
+- Include fallback handling for non-JSON responses
+- Reference ethical frameworks: consequentialism, deontology, virtue ethics, care ethics, justice
+
+## Integration Testing
+1. **Build Verification**: Ensure `npm run build` completes without errors
+2. **Server Startup**: Test with valid GEMINI_API_KEY
+3. **Claude Desktop**: Update [claude_desktop_config.json](mdc:claude_desktop_config.json) with correct path
+4. **Tool Testing**: Use MCP inspector or Claude Desktop to test tool calls
+
+## Common Issues
+- **Missing API Key**: Server exits with error if GEMINI_API_KEY not set
+- **Import Errors**: Ensure all imports use `.js` extensions for ES modules
+- **Build Failures**: Check TypeScript configuration in [tsconfig.json](mdc:tsconfig.json)
+- **Permission Issues**: Build script sets executable permissions on compiled index.js

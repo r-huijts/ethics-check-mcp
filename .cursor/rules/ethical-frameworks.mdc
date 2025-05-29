@@ -1,0 +1,94 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Ethical Frameworks & Analysis Patterns
+
+## Ethical Analysis Approach
+This project implements comprehensive ethical oversight using multiple established ethical frameworks. The analysis is powered by Gemini AI with structured prompts in [src/tools/](mdc:src/tools).
+
+## Core Ethical Frameworks Applied
+
+### 1. Consequentialism
+- **Focus**: Outcomes and consequences of actions
+- **Application**: Evaluating potential harm from AI responses
+- **Implementation**: Risk assessment and severity levels in [src/tools/ethicsCheck.ts](mdc:src/tools/ethicsCheck.ts)
+
+### 2. Deontological Ethics
+- **Focus**: Duties, rules, and rights
+- **Application**: Privacy rights, consent requirements, transparency obligations
+- **Implementation**: Category-based analysis for rule violations
+
+### 3. Virtue Ethics
+- **Focus**: Character traits and moral virtues
+- **Application**: Honesty, integrity, compassion in AI interactions
+- **Implementation**: Guidance recommendations in [src/tools/ethicsGuide.ts](mdc:src/tools/ethicsGuide.ts)
+
+### 4. Care Ethics
+- **Focus**: Relationships, care, and contextual factors
+- **Application**: Stakeholder consideration and vulnerable population protection
+- **Implementation**: Stakeholder analysis in ethical guidance
+
+### 5. Justice and Fairness
+- **Focus**: Equity, fair treatment, and distribution of benefits/harms
+- **Application**: Bias detection and fairness assessment
+- **Implementation**: Bias and discrimination category tracking
+
+## Ethical Categories System
+Defined in [src/utils/storage.ts](mdc:src/utils/storage.ts), the system tracks 9 standardized categories:
+
+### Privacy & Data Protection
+- **Scope**: Personal data handling, confidentiality, unauthorized access
+- **Severity Levels**: Low (minor privacy concerns) to Critical (major data breaches)
+
+### Bias and Discrimination
+- **Scope**: Unfair treatment based on protected characteristics
+- **Detection**: Stereotyping, exclusion, prejudicial assumptions
+
+### Misinformation
+- **Scope**: False, misleading, or unverified information
+- **Assessment**: Accuracy, source credibility, potential for harm
+
+### Harmful Content
+- **Scope**: Content causing physical, emotional, or societal harm
+- **Examples**: Violence promotion, self-harm encouragement, dangerous advice
+
+### Manipulation
+- **Scope**: Deceptive practices, exploitation of vulnerabilities
+- **Detection**: Coercion, false promises, psychological manipulation
+
+### Consent Issues
+- **Scope**: Acting without proper permission or authorization
+- **Application**: Data use, image rights, decision-making autonomy
+
+### Transparency Concerns
+- **Scope**: Hiding capabilities, limitations, or conflicts of interest
+- **Requirements**: Clear disclosure of AI nature and limitations
+
+### Fairness Issues
+- **Scope**: Unequal treatment or access to resources/opportunities
+- **Assessment**: Equitable distribution, equal consideration
+
+## Analysis Methodology
+
+### Risk Assessment Matrix
+Each concern is evaluated across:
+- **Severity**: Low, Medium, High, Critical
+- **Category**: One of 9 standardized ethical categories
+- **Stakeholder Impact**: Who is affected and how
+- **Actionability**: Specific steps to address the concern
+
+### Pattern Recognition
+The [src/tools/ethicsLearn.ts](mdc:src/tools/ethicsLearn.ts) tool implements:
+- **Concern Logging**: Persistent storage of ethical issues
+- **Category Statistics**: Tracking frequency of different concern types
+- **Trend Analysis**: Identifying recurring ethical patterns
+- **Knowledge Building**: Improving future oversight through learning
+
+### Contextual Analysis
+Ethical assessment considers:
+- **Domain Context**: Healthcare, education, business, etc.
+- **Stakeholder Relationships**: Power dynamics and vulnerabilities
+- **Cultural Factors**: Diverse ethical perspectives and values
+- **Temporal Factors**: Short-term vs. long-term consequences
