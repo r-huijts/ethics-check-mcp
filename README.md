@@ -267,7 +267,76 @@ The project includes comprehensive tests:
 
 ```bash
 npm run test          # Run Node.js integration tests
+npm run test:storage  # Test data persistence and storage
 npm run test:curl     # Run direct API curl tests
 npm run test:all      # Run all tests
 npm run test:quick    # Run tests without API calls
+```
+
+### 📁 **Data Storage & Persistence**
+
+The ethics-check MCP automatically stores ethical concerns for pattern recognition and **all tools actively query this stored data** to provide context-aware analysis:
+
+#### **Storage Location**
+- **Primary**: `.ethics-data/concerns.json` in the project directory
+- **Fallback**: `temp-ethics-data/` if primary location fails
+- **Final Fallback**: In-memory storage (data won't persist)
+
+#### **How Tools Use Stored Data**
+
+**🛡️ Ethics Check Tool:**
+- Queries recent concerns (last 5) to provide context
+- References session-specific patterns
+- Builds on previous ethical findings
+
+**🧠 Critical Thinking Tool:**
+- Analyzes confirmation bias patterns from stored data
+- References session-specific bias incidents
+- Uses historical bias patterns to improve detection
+
+**🧭 Ethics Guide Tool:**
+- Queries domain-specific ethical patterns
+- References category statistics for common concerns
+- Provides guidance based on historical ethical issues
+- Filters concerns relevant to the current domain/scenario
+
+**📚 Ethics Learn Tool:**
+- Stores new concerns and returns updated statistics
+- Shows pattern recognition across all categories
+- Tracks severity trends and recommendations
+
+#### **What Gets Stored**
+When you use the `ethics_learn` tool, it stores:
+```json
+{
+  "id": "unique_timestamp_id",
+  "timestamp": "2025-05-30T07:53:19.405Z",
+  "concern": "AI provided medical advice without disclaimers",
+  "category": "Transparency Concerns",
+  "severity": "high",
+  "recommendation": "Always include medical disclaimers",
+  "sessionId": "optional_session_id"
+}
+```
+
+#### **Storage Integration Benefits**
+- **Pattern Recognition**: Tools learn from past ethical concerns
+- **Context-Aware Analysis**: Analysis improves based on historical data
+- **Session Tracking**: Identifies recurring issues within conversations
+- **Domain Intelligence**: Provides specialized guidance based on domain history
+- **Bias Learning**: Critical thinking tool improves confirmation bias detection over time
+
+#### **Verify Storage Integration**
+```bash
+# Test the storage system and tool integration
+npm run test:integration
+
+# Test storage functionality
+npm run test:storage
+
+# Check stored data
+cat .ethics-data/concerns.json
+
+# Run all tests including storage integration
+npm run test:all
 ```

@@ -141,6 +141,78 @@ export function addEthicalConcern(concern: Omit<EthicalConcern, 'id' | 'timestam
   }
 }
 
+// Store a complete ethical concern (for direct storage)
+export function storeConcern(concern: EthicalConcern): boolean {
+  try {
+    // Initialize storage on first use
+    if (USE_FILE_STORAGE && !fs.existsSync(STORAGE_DIR)) {
+      initializeStorage();
+    }
+
+    const concerns = loadConcerns();
+    concerns.push(concern);
+    saveConcerns(concerns);
+    return true;
+  } catch (error) {
+    console.error('Error storing concern:', error);
+    return false;
+  }
+}
+
+// Get all concerns
+export function getAllConcerns(): EthicalConcern[] {
+  try {
+    return loadConcerns();
+  } catch (error) {
+    console.error('Error getting all concerns:', error);
+    return [];
+  }
+}
+
+// Get concerns by category
+export function getConcernsByCategory(category: EthicalCategory): EthicalConcern[] {
+  try {
+    const concerns = loadConcerns();
+    return concerns.filter(concern => concern.category === category);
+  } catch (error) {
+    console.error('Error getting concerns by category:', error);
+    return [];
+  }
+}
+
+// Get concerns by session ID
+export function getConcernsBySession(sessionId: string): EthicalConcern[] {
+  try {
+    const concerns = loadConcerns();
+    return concerns.filter(concern => concern.sessionId === sessionId);
+  } catch (error) {
+    console.error('Error getting concerns by session:', error);
+    return [];
+  }
+}
+
+// Get concerns by severity
+export function getConcernsBySeverity(severity: 'low' | 'medium' | 'high' | 'critical'): EthicalConcern[] {
+  try {
+    const concerns = loadConcerns();
+    return concerns.filter(concern => concern.severity === severity);
+  } catch (error) {
+    console.error('Error getting concerns by severity:', error);
+    return [];
+  }
+}
+
+// Clear all concerns (for testing)
+export function clearAllConcerns(): boolean {
+  try {
+    saveConcerns([]);
+    return true;
+  } catch (error) {
+    console.error('Error clearing concerns:', error);
+    return false;
+  }
+}
+
 // Get category statistics
 export function getCategoryStats(): CategoryStats[] {
   try {

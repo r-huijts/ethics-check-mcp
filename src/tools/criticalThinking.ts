@@ -1,4 +1,5 @@
 import { generateEthicsResponse } from '../utils/gemini.js';
+import { getConcernsByCategory, getConcernsBySession, getRecentConcerns } from '../utils/storage.js';
 
 export interface CriticalThinkingInput {
   aiResponse: string;
@@ -25,6 +26,35 @@ export interface CriticalThinkingOutput {
 export async function criticalThinkingTool(input: CriticalThinkingInput): Promise<CriticalThinkingOutput> {
   console.error('Starting critical thinking analysis...');
   
+  // Query stored data for pattern analysis
+  const confirmationBiasConcerns = getConcernsByCategory('Confirmation Bias');
+  const sessionConcerns = input.sessionId ? getConcernsBySession(input.sessionId) : [];
+  const recentConcerns = getRecentConcerns(3);
+  
+  // Build context from stored patterns
+  let storedPatternsContext = '';
+  
+  if (confirmationBiasConcerns.length > 0) {
+    storedPatternsContext += `\nPREVIOUS CONFIRMATION BIAS PATTERNS DETECTED:\n`;
+    storedPatternsContext += confirmationBiasConcerns.slice(0, 3).map(c => 
+      `- ${c.concern} (Severity: ${c.severity}) - Recommendation: ${c.recommendation}`
+    ).join('\n');
+  }
+  
+  if (sessionConcerns.length > 0) {
+    storedPatternsContext += `\nPREVIOUS CONCERNS IN THIS SESSION:\n`;
+    storedPatternsContext += sessionConcerns.map(c => 
+      `- ${c.category}: ${c.concern}`
+    ).join('\n');
+  }
+  
+  if (recentConcerns.length > 0) {
+    storedPatternsContext += `\nRECENT ETHICAL CONCERNS ACROSS ALL SESSIONS:\n`;
+    storedPatternsContext += recentConcerns.map(c => 
+      `- ${c.category}: ${c.concern} (${c.severity})`
+    ).join('\n');
+  }
+  
   const prompt = `You are a critical thinking specialist analyzing an AI response for confirmation bias, intellectual rigor, and balanced reasoning. Your role is to identify where the AI may be being overly agreeable or failing to provide critical analysis.
 
 AI RESPONSE TO ANALYZE:
@@ -34,6 +64,8 @@ ORIGINAL USER REQUEST:
 ${input.userRequest}
 
 ${input.context ? `CONTEXT:\n${input.context}` : ''}
+
+${storedPatternsContext}
 
 **DUAL ANALYSIS APPROACH:**
 

@@ -10,8 +10,10 @@
     "dev": "tsc --watch",
     "test": "npm run build && node tests/gemini.test.js",
     "test:gemini": "npm run build && node tests/gemini.test.js",
+    "test:storage": "npm run build && node tests/storage.test.js",
+    "test:integration": "npm run build && node tests/storage-integration.test.js",
     "test:curl": "./tests/curl-test.sh",
-    "test:all": "npm run test && npm run test:curl",
+    "test:all": "npm run test && npm run test:storage && npm run test:integration && npm run test:curl",
     "test:quick": "npm run build && GEMINI_API_KEY=test_key node tests/gemini.test.js"
   },
   "keywords": [
