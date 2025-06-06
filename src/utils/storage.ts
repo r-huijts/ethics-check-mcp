@@ -364,10 +364,10 @@ function calculateRecencyScore(timestamp: string, maxAge: number = 30 * 24 * 60 
   const age = now - concernTime;
   
   if (age < 0) return 1; // Future timestamps get max score
-  if (age > maxAge) return 0.1; // Very old concerns get minimal score
+  if (age > maxAge) return 0.05; // Very old concerns get minimal score (was 0.1)
   
   // Exponential decay: more recent = higher score
-  return Math.max(0.1, Math.exp(-age / (maxAge * 0.3)));
+  return Math.max(0.05, Math.exp(-age / (maxAge * 0.3)));
 }
 
 // Calculate severity score (0-1, where 1 is critical)

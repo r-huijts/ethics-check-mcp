@@ -40,11 +40,19 @@ export function cleanGeminiJsonResponse(response: string): string {
 export async function generateEthicsResponse(prompt: string): Promise<string> {
   const model = getGeminiModel();
   
+  // Simple token estimation for monitoring (rough approximation)
+  const estimatedTokens = Math.ceil(prompt.length / 4); // ~4 chars per token average
+  console.error(`📊 Estimated prompt tokens: ${estimatedTokens}`);
+  
   try {
     console.error('Making Gemini API call with gemini-2.0-flash...');
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
+    
+    // Log response length for monitoring
+    const responseTokens = Math.ceil(text.length / 4);
+    console.error(`📊 Estimated response tokens: ${responseTokens}, Total: ~${estimatedTokens + responseTokens}`);
     console.error('Gemini API call successful');
     return text;
   } catch (error) {
