@@ -117,7 +117,80 @@ function saveConcerns(concerns: EthicalConcern[]): void {
   }
 }
 
-// Add a new ethical concern
+// Simple string similarity check (Levenshtein-like)
+function getStringSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function getEditDistance(str1: string, str2: string): number {
+  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
+  
+  for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
+  
+  for (let j = 1; j <= str2.length; j++) {
+    for (let i = 1; i <= str1.length; i++) {
+      const substitutionCost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1, // insertion
+        matrix[j - 1][i] + 1, // deletion
+        matrix[j - 1][i - 1] + substitutionCost // substitution
+      );
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+// Check if a concern is a duplicate
+function isDuplicateConcern(newConcern: Omit<EthicalConcern, 'id' | 'timestamp'>, existingConcerns: EthicalConcern[]): boolean {
+  const now = Date.now();
+  const recentTimeframe = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  
+  for (const existing of existingConcerns) {
+    const existingTime = new Date(existing.timestamp).getTime();
+    const timeDiff = now - existingTime;
+    
+    // Check for duplicates within recent timeframe
+    if (timeDiff <= recentTimeframe) {
+      // Exact match check
+      if (existing.concern.toLowerCase() === newConcern.concern.toLowerCase() && 
+          existing.category === newConcern.category) {
+        console.error(`🔄 Duplicate detected (exact match): "${newConcern.concern.substring(0, 50)}..."`);
+        return true;
+      }
+      
+      // Same session + same category check (more likely to be duplicate)
+      if (existing.sessionId && newConcern.sessionId && 
+          existing.sessionId === newConcern.sessionId && 
+          existing.category === newConcern.category) {
+        
+        const similarity = getStringSimilarity(existing.concern.toLowerCase(), newConcern.concern.toLowerCase());
+        if (similarity > 0.8) { // 80% similarity threshold
+          console.error(`🔄 Duplicate detected (session + similarity): "${newConcern.concern.substring(0, 50)}..." (${Math.round(similarity * 100)}% similar)`);
+          return true;
+        }
+      }
+      
+      // High similarity check across all recent concerns
+      const similarity = getStringSimilarity(existing.concern.toLowerCase(), newConcern.concern.toLowerCase());
+      if (similarity > 0.9) { // 90% similarity threshold for different sessions
+        console.error(`🔄 Duplicate detected (high similarity): "${newConcern.concern.substring(0, 50)}..." (${Math.round(similarity * 100)}% similar)`);
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
+// Add a new ethical concern with duplicate detection
 export function addEthicalConcern(concern: Omit<EthicalConcern, 'id' | 'timestamp'>): boolean {
   try {
     // Initialize storage on first use
@@ -126,6 +199,13 @@ export function addEthicalConcern(concern: Omit<EthicalConcern, 'id' | 'timestam
     }
 
     const concerns = loadConcerns();
+    
+    // Check for duplicates
+    if (isDuplicateConcern(concern, concerns)) {
+      console.error(`⚠️ Skipping duplicate concern: "${concern.concern.substring(0, 50)}..."`);
+      return false; // Return false to indicate no storage occurred (but not an error)
+    }
+    
     const newConcern: EthicalConcern = {
       ...concern,
       id: Date.now().toString(),
@@ -134,6 +214,8 @@ export function addEthicalConcern(concern: Omit<EthicalConcern, 'id' | 'timestam
     
     concerns.push(newConcern);
     saveConcerns(concerns);
+    
+    console.error(`✅ Stored new concern: ${concern.category} - "${concern.concern.substring(0, 50)}..."`);
     return true;
   } catch (error) {
     console.error('Error adding ethical concern:', error);

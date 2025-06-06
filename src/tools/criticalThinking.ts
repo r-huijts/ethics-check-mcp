@@ -29,14 +29,14 @@ export async function criticalThinkingTool(input: CriticalThinkingInput): Promis
   // Query stored data for pattern analysis
   const confirmationBiasConcerns = getConcernsByCategory('Confirmation Bias');
   const sessionConcerns = input.sessionId ? getConcernsBySession(input.sessionId) : [];
-  const recentConcerns = getRecentConcerns(3);
+  const recentConcerns = getRecentConcerns(8);
   
   // Build context from stored patterns
   let storedPatternsContext = '';
   
   if (confirmationBiasConcerns.length > 0) {
     storedPatternsContext += `\nPREVIOUS CONFIRMATION BIAS PATTERNS DETECTED:\n`;
-    storedPatternsContext += confirmationBiasConcerns.slice(0, 3).map(c => 
+    storedPatternsContext += confirmationBiasConcerns.slice(0, 8).map(c => 
       `- ${c.concern} (Severity: ${c.severity}) - Recommendation: ${c.recommendation}`
     ).join('\n');
   }

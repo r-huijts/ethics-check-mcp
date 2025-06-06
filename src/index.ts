@@ -85,6 +85,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: "array",
               items: { type: "string" },
               description: "OPTIONAL: Array of specific ethical areas to emphasize in analysis. Options include: 'privacy', 'bias', 'misinformation', 'harmful content', 'manipulation', 'consent', 'transparency', 'fairness', 'confirmation bias'. Example: ['confirmation bias', 'privacy']"
+            },
+            autoStore: {
+              type: "boolean",
+              description: "OPTIONAL: If true, automatically store identified concerns for future pattern analysis. This eliminates the need to manually call ethics_learn for each concern. Default: true (set to false to disable)."
             }
           },
           required: ["conversation", "userRequest"]
@@ -200,7 +204,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           context: typeof args.context === 'string' ? args.context : undefined,
           sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined,
           previousConcerns: typeof args.previousConcerns === 'string' ? args.previousConcerns : undefined,
-          focusAreas: Array.isArray(args.focusAreas) ? args.focusAreas : undefined
+          focusAreas: Array.isArray(args.focusAreas) ? args.focusAreas : undefined,
+          autoStore: typeof args.autoStore === 'boolean' ? args.autoStore : true // Default to true
         };
         
         const result = await ethicsCheckTool(input);

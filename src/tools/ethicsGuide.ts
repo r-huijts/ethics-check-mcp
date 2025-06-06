@@ -22,7 +22,7 @@ export async function ethicsGuideTool(input: EthicsGuideInput): Promise<EthicsGu
   
   // Query stored data for pattern analysis and domain-specific insights
   const sessionConcerns = input.sessionId ? getConcernsBySession(input.sessionId) : [];
-  const recentConcerns = getRecentConcerns(5);
+  const recentConcerns = getRecentConcerns(12);
   const categoryStats = getCategoryStats();
   
   // Get domain-relevant concerns if domain is specified
@@ -48,7 +48,7 @@ export async function ethicsGuideTool(input: EthicsGuideInput): Promise<EthicsGu
   
   if (domainRelevantConcerns.length > 0) {
     storedPatternsContext += `\nRELEVANT DOMAIN-SPECIFIC ETHICAL PATTERNS:\n`;
-    storedPatternsContext += domainRelevantConcerns.slice(0, 3).map(c => 
+    storedPatternsContext += domainRelevantConcerns.slice(0, 8).map(c => 
       `- ${c.category}: ${c.concern} - Recommendation: ${c.recommendation}`
     ).join('\n');
   }
@@ -62,7 +62,7 @@ export async function ethicsGuideTool(input: EthicsGuideInput): Promise<EthicsGu
   
   if (recentConcerns.length > 0) {
     storedPatternsContext += `\nRECENT ETHICAL CONCERNS TO CONSIDER:\n`;
-    storedPatternsContext += recentConcerns.slice(0, 3).map(c => 
+    storedPatternsContext += recentConcerns.slice(0, 8).map(c => 
       `- ${c.category}: ${c.concern} (${c.severity})`
     ).join('\n');
   }

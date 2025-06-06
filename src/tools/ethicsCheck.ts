@@ -1,5 +1,5 @@
 import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
-import { getRecentConcerns } from '../utils/storage.js';
+import { getRecentConcerns, addEthicalConcern, EthicalCategory } from '../utils/storage.js';
 
 export interface EthicsCheckInput {
   conversation: string;
@@ -8,6 +8,7 @@ export interface EthicsCheckInput {
   sessionId?: string;
   previousConcerns?: string;
   focusAreas?: string[];
+  autoStore?: boolean;
 }
 
 export interface EthicsCheckOutput {
@@ -21,13 +22,14 @@ export interface EthicsCheckOutput {
   overallRisk: 'low' | 'medium' | 'high' | 'critical';
   recommendations: string[];
   criticalThinkingGaps?: string[];
+  storedConcerns?: number;
 }
 
 export async function ethicsCheckTool(input: EthicsCheckInput): Promise<EthicsCheckOutput> {
   console.error('Starting ethics check analysis...');
   
-  // Get recent concerns for pattern analysis
-  const recentConcerns = getRecentConcerns(5);
+  // Get recent concerns for pattern analysis (increased for better pattern recognition)
+  const recentConcerns = getRecentConcerns(10);
   const concernsContext = recentConcerns.length > 0 
     ? `Recent ethical concerns in this session: ${recentConcerns.map(c => `${c.category}: ${c.concern}`).join('; ')}`
     : '';
@@ -115,8 +117,41 @@ If no significant ethical concerns are found, still provide the assessment with 
       const cleanResponse = cleanGeminiJsonResponse(response);
       
       const parsed = JSON.parse(cleanResponse);
+      
+      // Auto-store concerns by default (unless explicitly disabled)
+      let storedCount = 0;
+      const shouldAutoStore = input.autoStore !== false; // Default to true
+      if (shouldAutoStore && parsed.concerns && parsed.concerns.length > 0) {
+        console.error(`Auto-storing ${parsed.concerns.length} identified concerns...`);
+        
+        for (const concern of parsed.concerns) {
+          try {
+            const success = addEthicalConcern({
+              concern: concern.description,
+              category: concern.category as EthicalCategory,
+              severity: concern.severity,
+              recommendation: concern.recommendation,
+              sessionId: input.sessionId
+            });
+            
+            if (success) {
+              storedCount++;
+            }
+          } catch (error) {
+            console.error(`Failed to store concern: ${concern.description.substring(0, 50)}...`, error);
+          }
+        }
+        
+        if (storedCount > 0) {
+          console.error(`✅ Successfully stored ${storedCount} concerns for future pattern analysis`);
+        }
+      }
+      
       console.error('Ethics check analysis complete');
-      return parsed;
+      
+              // Add storage info to response if auto-storage was used
+        const result = shouldAutoStore ? { ...parsed, storedConcerns: storedCount } : parsed;
+      return result;
     } catch (parseError) {
       console.error('❌ JSON parsing failed:', parseError instanceof Error ? parseError.message : 'Unknown parse error');
       console.error('Parse error details:', parseError);
