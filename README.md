@@ -4,7 +4,7 @@
 
 *An MCP server that turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.*
 
-[<img src="https://img.shields.io/badge/Add%20to-Cursor-000000?style=for-the-badge&logo=cursor&logoColor=white" alt="Add to Cursor" />](cursor://anysphere.cursor-deeplink/mcp/install?name=ethics-check-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImV0aGljcy1jaGVjay1tY3AiXX0%3D)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-check-mcp&config=eyJjb21tYW5kIjoibnB4IC15IGV0aGljcy1jaGVjay1tY3AifQ%3D%3D)
 [![npm version](https://img.shields.io/npm/v/ethics-check-mcp.svg)](https://www.npmjs.com/package/ethics-check-mcp)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
