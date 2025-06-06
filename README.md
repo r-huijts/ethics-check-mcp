@@ -4,8 +4,8 @@
 
 *An MCP server that turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.*
 
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-check-mcp&config=eyJjb21tYW5kIjoibnB4IC15IGV0aGljcy1jaGVjay1tY3AifQ%3D%3D)
-[![npm version](https://img.shields.io/npm/v/ethics-check-mcp.svg)](https://www.npmjs.com/package/ethics-check-mcp)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
+[![npm version](https://img.shields.io/npm/v/@r-huijts/ethics-vibe-check.svg)](https://www.npmjs.com/package/@r-huijts/ethics-vibe-check)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -107,16 +107,20 @@ Remembers all interactions, recognizes your specific thinking patterns, and gets
 ## Installation & Setup
 
 ### One-Click Install
-[<img src="https://img.shields.io/badge/Add%20to-Cursor-000000?style=for-the-badge&logo=cursor&logoColor=white" alt="Add to Cursor" />](cursor://anysphere.cursor-deeplink/mcp/install?name=ethics-check-mcp&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsImV0aGljcy1jaGVjay1tY3AiXX0%3D)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
 
 Or manually add to your Cursor MCP settings:
+
 
 ```json
 {
   "mcpServers": {
-    "ethics-check-mcp": {
+    "ethics-vibe-check": {
       "command": "npx",
-      "args": ["-y", "ethics-check-mcp"]
+      "args": [
+        "-y", 
+        "@r-huijts/ethics-vibe-check"
+        ]
     }
   }
 }
@@ -125,10 +129,10 @@ Or manually add to your Cursor MCP settings:
 ### Alternative Methods
 ```bash
 # Global install
-npm install -g ethics-check-mcp
+npm install -g @r-huijts/ethics-vibe-check
 
 # Direct usage  
-npx ethics-check-mcp
+npx @r-huijts/ethics-vibe-check
 ```
 
 ---

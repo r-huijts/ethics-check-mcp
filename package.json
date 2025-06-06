@@ -1,10 +1,10 @@
 {
-  "name": "ethics-check-mcp",
-  "version": "1.2.1",
+  "name": "@r-huijts/ethics-vibe-check",
+  "version": "1.0.0",
   "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
   "main": "build/index.js",
   "bin": {
-    "ethics-check-mcp": "build/index.js"
+    "ethics-vibe-check": "build/index.js"
   },
   "type": "module",
   "scripts": {
