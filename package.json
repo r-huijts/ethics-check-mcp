@@ -1,7 +1,7 @@
 {
   "name": "ethics-check-mcp",
-  "version": "1.0.0",
-  "description": "🛡️ Comprehensive AI ethics oversight with intelligent pattern recognition and automatic learning. Detects confirmation bias, provides ethical guidance, and learns from patterns.",
+  "version": "1.1.0",
+  "description": "🛡️ Your AI ethics companion that learns from your decisions and helps you navigate complex choices with Claude. For anyone using AI who wants to make more thoughtful decisions.",
   "main": "build/index.js",
   "bin": {
     "ethics-check-mcp": "build/index.js"
