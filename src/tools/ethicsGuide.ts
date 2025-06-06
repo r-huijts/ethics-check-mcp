@@ -1,4 +1,4 @@
-import { generateEthicsResponse } from '../utils/gemini.js';
+import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
 import { getConcernsByCategory, getConcernsBySession, getRecentConcerns, getCategoryStats } from '../utils/storage.js';
 
 export interface EthicsGuideInput {
@@ -133,13 +133,20 @@ Provide practical, implementable advice that balances idealism with real-world c
   try {
     const response = await generateEthicsResponse(prompt);
     
+    // Debug: Log response length for monitoring
+    console.error('Gemini response received, length:', response.length);
+    
     // Try to parse JSON response
     try {
-      const parsed = JSON.parse(response);
+      // Clean up the response - Gemini might wrap JSON in markdown code blocks
+      const cleanResponse = cleanGeminiJsonResponse(response);
+      
+      const parsed = JSON.parse(cleanResponse);
       console.error('Ethics guidance generation complete');
       return parsed;
     } catch (parseError) {
-      console.error('Failed to parse JSON response, returning formatted text');
+      console.error('❌ JSON parsing failed:', parseError instanceof Error ? parseError.message : 'Unknown parse error');
+      console.error('Parse error details:', parseError);
       
       // Fallback: return a structured response based on the text
       return {

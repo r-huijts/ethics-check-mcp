@@ -1,4 +1,4 @@
-import { generateEthicsResponse } from '../utils/gemini.js';
+import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
 import { getRecentConcerns } from '../utils/storage.js';
 
 export interface EthicsCheckInput {
@@ -112,14 +112,7 @@ If no significant ethical concerns are found, still provide the assessment with 
     // Try to parse JSON response
     try {
       // Clean up the response - Gemini might wrap JSON in markdown code blocks
-      let cleanResponse = response.trim();
-      
-      // Remove markdown code block formatting if present
-      if (cleanResponse.startsWith('```json')) {
-        cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-      } else if (cleanResponse.startsWith('```')) {
-        cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/```\s*$/, '');
-      }
+      const cleanResponse = cleanGeminiJsonResponse(response);
       
       const parsed = JSON.parse(cleanResponse);
       console.error('Ethics check analysis complete');

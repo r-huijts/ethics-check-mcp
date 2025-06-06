@@ -20,6 +20,23 @@ export function getGeminiModel() {
   return genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 }
 
+/**
+ * Clean Gemini response by removing markdown code block formatting
+ * Gemini 2.0-flash often wraps JSON responses in ```json``` blocks
+ */
+export function cleanGeminiJsonResponse(response: string): string {
+  let cleanResponse = response.trim();
+  
+  // Remove markdown code block formatting if present
+  if (cleanResponse.startsWith('```json')) {
+    cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+  } else if (cleanResponse.startsWith('```')) {
+    cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/```\s*$/, '');
+  }
+  
+  return cleanResponse.trim();
+}
+
 export async function generateEthicsResponse(prompt: string): Promise<string> {
   const model = getGeminiModel();
   
