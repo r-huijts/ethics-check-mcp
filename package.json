@@ -1,6 +1,6 @@
 {
   "name": "@r-huijts/ethics-vibe-check",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
   "main": "build/index.js",
   "bin": {

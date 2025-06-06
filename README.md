@@ -104,6 +104,47 @@ Remembers all interactions, recognizes your specific thinking patterns, and gets
 
 ---
 
+## 🎯 **Customize Your Ethics Vibe Check** (IMPORTANT!)
+
+**This is where the magic happens.** Add these system prompts to make the ethics vibe check work perfectly for YOUR specific situation and biases:
+
+### For Cursor Users
+Add this to your Cursor rules/system prompts:
+
+```markdown
+## My Ethics Context
+- Challenge me on: [confirmation bias, assumptions, blind spots]
+- My typical biases: [what patterns do you fall into?]
+- Don't let me: [avoid hard questions, seek easy answers, etc.]
+- Push me toward: [intellectual honesty, uncomfortable truths, etc.]
+
+Be willing to interrupt me when I'm seeking confirmation rather than truth.
+```
+
+### For Claude Desktop Users
+Add this to your custom instructions or at the start of conversations:
+
+```markdown
+## Ethics Vibe Check Instructions
+I want you to actively challenge my thinking and interrupt comfortable conversations. 
+
+- Challenge me on: [confirmation bias, assumptions, blind spots]
+- My typical biases: [what patterns do you fall into?] 
+- Don't let me: [avoid hard questions, seek easy answers, etc.]
+- Push me toward: [intellectual honesty, uncomfortable truths, etc.]
+
+When I'm seeking confirmation rather than truth, interrupt me and make me think harder.
+```
+
+### For Any Claude Interface
+You can also start conversations with:
+
+*"I'm using Ethics Vibe Check tools. Please actively challenge my assumptions and interrupt me when I'm seeking comfortable answers instead of truth. Focus on [your specific areas of concern]."*
+
+**Why this matters:** Without context about your specific biases and goals, the tools work generically. WITH your custom prompt, they become laser-focused on YOUR thinking patterns and blind spots.
+
+---
+
 ## Installation & Setup
 
 ### One-Click Install
@@ -156,19 +197,9 @@ The tools work automatically in the background, but you can also invoke them dir
 @ethics-guide Help me think through this complex situation from different ethical angles
 ```
 
-### Customize Your Challenge Level
+### Additional Tips
 
-Add this to your Cursor system prompts to make the experience more targeted:
-
-```markdown
-## My Ethics Context
-- Challenge me on: [confirmation bias, assumptions, blind spots]
-- My typical biases: [what patterns do you fall into?]
-- Don't let me: [avoid hard questions, seek easy answers, etc.]
-- Push me toward: [intellectual honesty, uncomfortable truths, etc.]
-
-Be willing to interrupt me when I'm seeking confirmation rather than truth.
-```
+The tools automatically analyze context and patterns, but direct invocation can be helpful for specific situations. Remember: the better your system prompt customization above, the more targeted and effective the challenges will be.
 
 ---
 
