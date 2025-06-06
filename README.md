@@ -2,10 +2,16 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/your-username/ethics-check-mcp)
+[![NPM Version](https://img.shields.io/npm/v/ethics-check-mcp)](https://www.npmjs.com/package/ethics-check-mcp)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Ethics Status](https://img.shields.io/badge/ethics-guardian-green)](https://github.com/your-username/ethics-check-mcp)
 [![Auto Storage](https://img.shields.io/badge/auto--storage-enabled-brightgreen)](https://github.com/your-username/ethics-check-mcp)
+
+**🚀 One-Click Installation for Cursor:**
+
+[![Add Ethics Check MCP to Cursor](https://img.shields.io/badge/Add_to-Cursor-blue?style=for-the-badge&logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=ethics-check&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJldGhpY3MtY2hlY2stbWNwIl0sImVudiI6eyJHRU1JTklfQVBJX0tFWSI6InlvdXJfYWN0dWFsX2dlbWluaV9hcGlfa2V5X2hlcmUifX0=)
+
+*Click the button above to automatically install in Cursor, or follow manual installation below.*
 
 </div>
 
@@ -147,39 +153,68 @@ Ethics Check MCP is a **comprehensive ethical oversight system** designed to pro
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### 🎯 **One-Click Installation (Recommended)**
+
+**For Cursor Users**: Click the "Add to Cursor" button above for automatic installation.
+
+**For Claude Desktop Users**: Follow the manual installation below.
+
+### 📦 **NPM Package Installation**
+
 ```bash
+# Install globally from npm
+npm install -g ethics-check-mcp
+
+# Or run directly with npx (no installation needed)
+npx ethics-check-mcp
+```
+
+### 🛠️ **Manual Installation**
+
+```bash
+# Clone and build from source
 git clone <your-repo-url>
 cd ethics-check-mcp
 npm install
+npm run build
 ```
 
 ### 2. Configuration
-```bash
-# Copy environment template
-cp env.example .env
 
-# Add your Gemini API key from https://aistudio.google.com/app/apikey
-echo "GEMINI_API_KEY=your_actual_api_key_here" > .env
+**Set up your Gemini API key:**
+
+```bash
+# Get your API key from https://aistudio.google.com/app/apikey
+export GEMINI_API_KEY="your_actual_api_key_here"
 ```
 
-### 3. Build & Test
-```bash
-# Build the project
-npm run build
+### 3. Integration
 
-# Test the complete system including auto-storage
-npm run test:all
+#### **For Cursor (Automatic)**
+1. Click the "Add to Cursor" button above
+2. Cursor will prompt to install the MCP server
+3. Set your `GEMINI_API_KEY` when prompted
+4. Start using the ethics tools!
 
-# Test the server
-npm start
-```
+#### **For Claude Desktop (Manual)**
 
-**Note**: This project uses the latest `gemini-2.0-flash` model for optimal performance and accuracy.
-
-### 4. Claude Desktop Integration
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
+```json
+{
+  "mcpServers": {
+    "ethics-check": {
+      "command": "npx",
+      "args": ["ethics-check-mcp"],
+      "env": {
+        "GEMINI_API_KEY": "your_actual_gemini_api_key_here"
+      }
+    }
+  }
+}
+```
+
+**Alternative for local development:**
 ```json
 {
   "mcpServers": {
@@ -193,10 +228,6 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   }
 }
 ```
-
-**Important**: Replace `/path/to/ethics-check-mcp/` with the absolute path to your ethics-check-mcp directory, and replace `your_actual_gemini_api_key_here` with your actual Gemini API key from https://aistudio.google.com/app/apikey
-
-**Note**: Claude Desktop doesn't load `.env` files, so you must specify the API key directly in the `env` section of the configuration.
 
 ## 🎯 Use Cases & Examples
 
@@ -348,6 +379,49 @@ npm run test:storage  # Test data persistence and auto-storage
 npm run test:curl     # Run direct API curl tests
 npm run test:all      # Run comprehensive test suite
 npm run test:quick    # Run tests without API calls
+```
+
+### Publishing
+
+**For package maintainers:**
+
+```bash
+# Prepare for publishing
+npm run build
+npm run test:all
+
+# Publish to npm
+npm publish
+
+# Update version
+npm version patch|minor|major
+npm publish
+```
+
+The package includes:
+- ✅ **Executable binary** (`npx ethics-check-mcp`)
+- ✅ **TypeScript definitions** 
+- ✅ **ESM module support**
+- ✅ **Automatic Cursor integration** via deeplinks
+- ✅ **Comprehensive testing suite**
+
+### Cursor Deeplink
+
+The "Add to Cursor" button uses the [Cursor deeplink protocol](https://docs.cursor.com/deeplinks) with this configuration:
+
+```json
+{
+  "command": "npx",
+  "args": ["ethics-check-mcp"],
+  "env": {
+    "GEMINI_API_KEY": "your_actual_gemini_api_key_here"
+  }
+}
+```
+
+To generate custom deeplinks, run:
+```bash
+node generate-cursor-link.js
 ```
 
 ## 🚨 Troubleshooting

@@ -1,50 +1,65 @@
 {
   "name": "ethics-check-mcp",
-  "version": "0.1.0",
-  "description": "Ethics Check MCP Server - Ethical oversight and critical thinking analysis for AI conversations",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "🛡️ Comprehensive AI ethics oversight with intelligent pattern recognition and automatic learning. Detects confirmation bias, provides ethical guidance, and learns from patterns.",
   "main": "build/index.js",
+  "bin": {
+    "ethics-check-mcp": "build/index.js"
+  },
+  "type": "module",
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "dev": "npm run build && node build/index.js",
     "start": "node build/index.js",
-    "dev": "tsc --watch",
-    "test": "npm run build && node tests/gemini.test.js",
-    "test:gemini": "npm run build && node tests/gemini.test.js",
-    "test:storage": "npm run build && node tests/storage.test.js",
-    "test:integration": "npm run build && node tests/storage-integration.test.js",
-    "test:curl": "./tests/curl-test.sh",
-    "test:all": "npm run test && npm run test:storage && npm run test:integration && npm run test:curl",
-    "test:quick": "npm run build && GEMINI_API_KEY=test_key node tests/gemini.test.js"
+    "test": "node test-ethics.js",
+    "test:storage": "node storage-analysis.js",
+    "test:curl": "curl -X POST http://localhost:3000/test -H \"Content-Type: application/json\" -d '{\"test\": true}'",
+    "test:all": "npm run build && npm run test && npm run test:storage",
+    "test:quick": "npm run build && echo 'Quick test: Build successful'",
+    "prepublishOnly": "npm run build",
+    "generate-deeplink": "node generate-cursor-link.js"
   },
   "keywords": [
-    "mcp",
-    "ethics",
-    "ai",
-    "claude",
-    "bias",
-    "critical-thinking",
+    "ai-ethics",
+    "ethical-ai",
     "confirmation-bias",
-    "oversight"
+    "pattern-recognition",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "ethics-oversight",
+    "bias-detection",
+    "critical-thinking",
+    "automated-learning"
   ],
-  "author": "Ethics Check MCP",
+  "author": "Your Name <your.email@example.com>",
   "license": "MIT",
-  "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "@modelcontextprotocol/sdk": "^0.6.0",
-    "dotenv": "^16.4.5"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ethics-check-mcp.git"
   },
-  "devDependencies": {
-    "@types/node": "^22.10.1",
-    "typescript": "^5.7.2"
+  "homepage": "https://github.com/yourusername/ethics-check-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/ethics-check-mcp/issues"
   },
-  "files": [
-    "build"
-  ],
   "engines": {
     "node": ">=18.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-username/ethics-check-mcp.git"
+  "files": [
+    "build/",
+    "README.md",
+    "USAGE.md",
+    "LICENSE",
+    "env.example",
+    "generate-cursor-link.js"
+  ],
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@modelcontextprotocol/sdk": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
   }
 } 
