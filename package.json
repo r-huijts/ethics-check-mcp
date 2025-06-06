@@ -1,6 +1,6 @@
 {
   "name": "@r-huijts/ethics-vibe-check",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
   "main": "build/index.js",
   "bin": {
@@ -56,7 +56,8 @@
   ],
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@modelcontextprotocol/sdk": "^1.0.2"
+    "@modelcontextprotocol/sdk": "^1.0.2",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
