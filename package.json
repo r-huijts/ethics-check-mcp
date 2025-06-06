@@ -1,7 +1,7 @@
 {
   "name": "ethics-check-mcp",
-  "version": "1.1.0",
-  "description": "🛡️ Your AI ethics companion that learns from your decisions and helps you navigate complex choices with Claude. For anyone using AI who wants to make more thoughtful decisions.",
+  "version": "1.2.1",
+  "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
   "main": "build/index.js",
   "bin": {
     "ethics-check-mcp": "build/index.js"
