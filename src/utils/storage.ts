@@ -24,12 +24,27 @@ export interface EthicalConcern {
   severity: 'low' | 'medium' | 'high' | 'critical';
   recommendation: string;
   sessionId?: string;
+  successScore?: number;
+  contextTags?: string[];
+  relatedConcernIds?: string[];
+}
+
+export interface WeightedConcern extends EthicalConcern {
+  weight: number;
+  recencyScore: number;
+  severityScore: number;
+  successScore: number;
+  relevanceScore: number;
+  totalScore: number;
 }
 
 export interface CategoryStats {
   category: EthicalCategory;
   count: number;
   recentExample?: EthicalConcern;
+  averageWeight?: number;
+  totalSuccessScore?: number;
+  averageRecency?: number;
 }
 
 // Storage configuration
@@ -337,6 +352,240 @@ export function getRecentConcerns(limit: number = 10): EthicalConcern[] {
   } catch (error) {
     console.error('Error getting recent concerns:', error);
     return [];
+  }
+}
+
+// 🧠 WEIGHTED PATTERN RECOGNITION SYSTEM
+
+// Calculate recency score (0-1, where 1 is most recent)
+function calculateRecencyScore(timestamp: string, maxAge: number = 30 * 24 * 60 * 60 * 1000): number {
+  const now = Date.now();
+  const concernTime = new Date(timestamp).getTime();
+  const age = now - concernTime;
+  
+  if (age < 0) return 1; // Future timestamps get max score
+  if (age > maxAge) return 0.1; // Very old concerns get minimal score
+  
+  // Exponential decay: more recent = higher score
+  return Math.max(0.1, Math.exp(-age / (maxAge * 0.3)));
+}
+
+// Calculate severity score (0-1, where 1 is critical)
+function calculateSeverityScore(severity: 'low' | 'medium' | 'high' | 'critical'): number {
+  const severityMap = {
+    'low': 0.25,
+    'medium': 0.5,
+    'high': 0.75,
+    'critical': 1.0
+  };
+  return severityMap[severity];
+}
+
+// Calculate relevance score based on context matching
+function calculateRelevanceScore(concern: EthicalConcern, context?: string, category?: EthicalCategory, sessionId?: string): number {
+  let score = 0.5; // Base relevance
+  
+  // Category match boost
+  if (category && concern.category === category) {
+    score += 0.3;
+  }
+  
+  // Session match boost (very relevant for ongoing conversations)
+  if (sessionId && concern.sessionId === sessionId) {
+    score += 0.4;
+  }
+  
+  // Context/tags matching
+  if (context && concern.contextTags) {
+    const contextWords = context.toLowerCase().split(/\s+/);
+    const matchingTags = concern.contextTags.filter(tag => 
+      contextWords.some(word => tag.toLowerCase().includes(word))
+    );
+    score += (matchingTags.length / concern.contextTags.length) * 0.2;
+  }
+  
+  // Text similarity for context matching
+  if (context) {
+    const similarity = getStringSimilarity(
+      concern.concern.toLowerCase(), 
+      context.toLowerCase()
+    );
+    score += similarity * 0.1;
+  }
+  
+  return Math.min(1.0, score);
+}
+
+// Apply weighted scoring to a concern
+function applyWeightedScoring(
+  concern: EthicalConcern, 
+  context?: string, 
+  category?: EthicalCategory, 
+  sessionId?: string,
+  weights: { recency: number; severity: number; success: number; relevance: number } = { recency: 0.3, severity: 0.25, success: 0.25, relevance: 0.2 }
+): WeightedConcern {
+  const recencyScore = calculateRecencyScore(concern.timestamp);
+  const severityScore = calculateSeverityScore(concern.severity);
+  const successScore = concern.successScore ?? 0.5; // Default neutral score
+  const relevanceScore = calculateRelevanceScore(concern, context, category, sessionId);
+  
+  // Calculate weighted total score
+  const totalScore = (
+    recencyScore * weights.recency +
+    severityScore * weights.severity +
+    successScore * weights.success +
+    relevanceScore * weights.relevance
+  );
+  
+  return {
+    ...concern,
+    weight: totalScore,
+    recencyScore,
+    severityScore,
+    successScore,
+    relevanceScore,
+    totalScore
+  };
+}
+
+// Get weighted concerns for pattern analysis (MAIN FUNCTION)
+export function getWeightedConcerns(options: {
+  limit?: number;
+  context?: string;
+  category?: EthicalCategory;
+  sessionId?: string;
+  minWeight?: number;
+  weights?: { recency: number; severity: number; success: number; relevance: number };
+} = {}): WeightedConcern[] {
+  try {
+    const {
+      limit = 10,
+      context,
+      category,
+      sessionId,
+      minWeight = 0.1,
+      weights = { recency: 0.3, severity: 0.25, success: 0.25, relevance: 0.2 }
+    } = options;
+    
+    const concerns = loadConcerns();
+    
+    // Apply weighted scoring to all concerns
+    const weightedConcerns = concerns
+      .map(concern => applyWeightedScoring(concern, context, category, sessionId, weights))
+      .filter(concern => concern.totalScore >= minWeight)
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, limit);
+    
+    return weightedConcerns;
+  } catch (error) {
+    console.error('Error getting weighted concerns:', error);
+    return [];
+  }
+}
+
+// Get category-specific weighted patterns
+export function getWeightedCategoryPatterns(category: EthicalCategory, limit: number = 5): WeightedConcern[] {
+  return getWeightedConcerns({
+    limit,
+    category,
+    weights: { recency: 0.2, severity: 0.3, success: 0.3, relevance: 0.2 } // Higher weight on severity and success for category patterns
+  });
+}
+
+// Get session-specific weighted patterns
+export function getWeightedSessionPatterns(sessionId: string, limit: number = 8): WeightedConcern[] {
+  return getWeightedConcerns({
+    limit,
+    sessionId,
+    weights: { recency: 0.4, severity: 0.2, success: 0.2, relevance: 0.2 } // Higher weight on recency for session patterns
+  });
+}
+
+// Update success score for a concern (for tracking recommendation effectiveness)
+export function updateConcernSuccessScore(concernId: string, successScore: number): boolean {
+  try {
+    const concerns = loadConcerns();
+    const concernIndex = concerns.findIndex(c => c.id === concernId);
+    
+    if (concernIndex === -1) {
+      console.error(`Concern with ID ${concernId} not found`);
+      return false;
+    }
+    
+    concerns[concernIndex].successScore = Math.max(0, Math.min(1, successScore));
+    saveConcerns(concerns);
+    
+    console.error(`✅ Updated success score for concern ${concernId}: ${successScore}`);
+    return true;
+  } catch (error) {
+    console.error('Error updating concern success score:', error);
+    return false;
+  }
+}
+
+// Get pattern insights for debugging/monitoring
+export function getPatternInsights(): {
+  totalConcerns: number;
+  averageWeight: number;
+  categoryDistribution: { [key: string]: number };
+  recentTrends: { category: EthicalCategory; trend: 'increasing' | 'decreasing' | 'stable' }[];
+} {
+  try {
+    const concerns = loadConcerns();
+    const weightedConcerns = concerns.map(concern => 
+      applyWeightedScoring(concern)
+    );
+    
+    const totalConcerns = concerns.length;
+    const averageWeight = weightedConcerns.reduce((sum, c) => sum + c.totalScore, 0) / totalConcerns;
+    
+    // Category distribution
+    const categoryDistribution: { [key: string]: number } = {};
+    concerns.forEach(concern => {
+      categoryDistribution[concern.category] = (categoryDistribution[concern.category] || 0) + 1;
+    });
+    
+    // Recent trends (last 7 days vs previous 7 days)
+    const now = Date.now();
+    const weekAgo = now - (7 * 24 * 60 * 60 * 1000);
+    const twoWeeksAgo = now - (14 * 24 * 60 * 60 * 1000);
+    
+    const recentTrends: { category: EthicalCategory; trend: 'increasing' | 'decreasing' | 'stable' }[] = [];
+    
+    ETHICAL_CATEGORIES.forEach(category => {
+      const recentCount = concerns.filter(c => 
+        c.category === category && new Date(c.timestamp).getTime() > weekAgo
+      ).length;
+      
+      const previousCount = concerns.filter(c => 
+        c.category === category && 
+        new Date(c.timestamp).getTime() > twoWeeksAgo && 
+        new Date(c.timestamp).getTime() <= weekAgo
+      ).length;
+      
+      let trend: 'increasing' | 'decreasing' | 'stable' = 'stable';
+      if (recentCount > previousCount * 1.2) trend = 'increasing';
+      else if (recentCount < previousCount * 0.8) trend = 'decreasing';
+      
+      if (recentCount > 0 || previousCount > 0) {
+        recentTrends.push({ category, trend });
+      }
+    });
+    
+    return {
+      totalConcerns,
+      averageWeight: averageWeight || 0,
+      categoryDistribution,
+      recentTrends
+    };
+  } catch (error) {
+    console.error('Error getting pattern insights:', error);
+    return {
+      totalConcerns: 0,
+      averageWeight: 0,
+      categoryDistribution: {},
+      recentTrends: []
+    };
   }
 }
 

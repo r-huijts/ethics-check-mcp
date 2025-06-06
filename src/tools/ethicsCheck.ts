@@ -1,5 +1,5 @@
 import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
-import { getRecentConcerns, addEthicalConcern, EthicalCategory } from '../utils/storage.js';
+import { getRecentConcerns, addEthicalConcern, EthicalCategory, getWeightedConcerns, WeightedConcern } from '../utils/storage.js';
 
 export interface EthicsCheckInput {
   conversation: string;
@@ -25,16 +25,76 @@ export interface EthicsCheckOutput {
   storedConcerns?: number;
 }
 
+// 🧠 Helper function to build enriched context from weighted concerns
+function buildWeightedConcernsContext(weightedConcerns: WeightedConcern[]): string {
+  if (weightedConcerns.length === 0) return '';
+  
+  const topConcerns = weightedConcerns.slice(0, 5); // Most relevant concerns
+  const categoryPatterns = new Map<string, WeightedConcern[]>();
+  
+  // Group by category for pattern recognition
+  weightedConcerns.forEach(concern => {
+    const category = concern.category;
+    if (!categoryPatterns.has(category)) {
+      categoryPatterns.set(category, []);
+    }
+    categoryPatterns.get(category)!.push(concern);
+  });
+  
+  let context = `**WEIGHTED ETHICAL PATTERN ANALYSIS** (${weightedConcerns.length} relevant concerns found):\n\n`;
+  
+  // Top weighted concerns
+  context += `**MOST RELEVANT CONCERNS:**\n`;
+  topConcerns.forEach((concern, index) => {
+    context += `${index + 1}. [Weight: ${concern.totalScore.toFixed(2)}] ${concern.category}: ${concern.concern}\n`;
+    context += `   → Recommendation: ${concern.recommendation}\n`;
+    if (concern.successScore !== undefined) {
+      context += `   → Success Score: ${concern.successScore.toFixed(2)} (${concern.successScore > 0.7 ? 'highly effective' : concern.successScore > 0.4 ? 'moderately effective' : 'needs improvement'})\n`;
+    }
+    context += `\n`;
+  });
+  
+  // Category patterns
+  context += `**PATTERN ANALYSIS BY CATEGORY:**\n`;
+  Array.from(categoryPatterns.entries())
+    .sort(([,a], [,b]) => b.length - a.length) // Sort by frequency
+    .slice(0, 3) // Top 3 categories
+    .forEach(([category, concerns]) => {
+      const avgWeight = concerns.reduce((sum, c) => sum + c.totalScore, 0) / concerns.length;
+      const avgSuccess = concerns.reduce((sum, c) => sum + (c.successScore || 0.5), 0) / concerns.length;
+      context += `• ${category}: ${concerns.length} instances, avg weight: ${avgWeight.toFixed(2)}, avg success: ${avgSuccess.toFixed(2)}\n`;
+    });
+  
+  context += `\n**PRIORITY FOCUS**: Pay special attention to patterns with high weights and categories with repeated occurrences.\n\n`;
+  
+  return context;
+}
+
 export async function ethicsCheckTool(input: EthicsCheckInput): Promise<EthicsCheckOutput> {
   console.error('Starting ethics check analysis...');
   
-  // Get recent concerns for pattern analysis (increased for better pattern recognition)
-  const recentConcerns = getRecentConcerns(10);
-  const concernsContext = recentConcerns.length > 0 
-    ? `Recent ethical concerns in this session: ${recentConcerns.map(c => `${c.category}: ${c.concern}`).join('; ')}`
+  // 🧠 WEIGHTED PATTERN RECOGNITION: Get intelligently scored concerns
+  const weightedConcerns = getWeightedConcerns({
+    limit: 10,
+    context: `${input.userRequest} ${input.context || ''}`,
+    sessionId: input.sessionId,
+    // Prioritize severity and relevance for ethics analysis
+    weights: { recency: 0.25, severity: 0.35, success: 0.2, relevance: 0.2 }
+  });
+  
+  // Build enriched context from weighted concerns
+  const enrichedContext = weightedConcerns.length > 0 ? 
+    buildWeightedConcernsContext(weightedConcerns) : '';
+  
+  // Fallback to simple recent concerns if weighted system has no data
+  const fallbackConcerns = weightedConcerns.length === 0 ? getRecentConcerns(5) : [];
+  const fallbackContext = fallbackConcerns.length > 0 
+    ? `Basic pattern context: ${fallbackConcerns.map(c => `${c.category}: ${c.concern}`).join('; ')}`
     : '';
 
   const prompt = `You are an AI ethics specialist conducting a comprehensive ethical review of an AI conversation. Your role is to identify potential ethical concerns, assess risks, and provide actionable recommendations.
+
+🧠 **ENHANCED PATTERN RECOGNITION**: You have access to weighted historical ethical concerns that have been prioritized by relevance, severity, and success of previous recommendations.
 
 CRITICAL FOCUS: Pay special attention to CONFIRMATION BIAS - instances where the AI is being overly agreeable, failing to challenge questionable assumptions, or simply reinforcing what the user wants to hear instead of providing balanced, critical analysis.
 
@@ -46,7 +106,9 @@ ${input.userRequest}
 
 ${input.context ? `ADDITIONAL CONTEXT:\n${input.context}` : ''}
 
-${concernsContext}
+${enrichedContext}
+
+${fallbackContext}
 
 ${input.previousConcerns ? `PREVIOUS CONCERNS:\n${input.previousConcerns}` : ''}
 

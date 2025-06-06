@@ -1,5 +1,5 @@
 import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
-import { getConcernsByCategory, getConcernsBySession, getRecentConcerns, getCategoryStats } from '../utils/storage.js';
+import { getConcernsByCategory, getConcernsBySession, getRecentConcerns, getCategoryStats, getWeightedConcerns, getWeightedSessionPatterns, WeightedConcern } from '../utils/storage.js';
 
 export interface EthicsGuideInput {
   scenario: string;
@@ -17,57 +17,116 @@ export interface EthicsGuideOutput {
   userReflectionPrompts?: string[];
 }
 
-export async function ethicsGuideTool(input: EthicsGuideInput): Promise<EthicsGuideOutput> {
-  console.error('Generating ethics guidance...');
+// 🧠 Helper function to build domain-intelligent guidance context
+function buildGuidancePatternContext(
+  weightedConcerns: WeightedConcern[], 
+  sessionConcerns: WeightedConcern[], 
+  categoryStats: any[], 
+  domain?: string
+): string {
+  let context = '';
   
-  // Query stored data for pattern analysis and domain-specific insights
-  const sessionConcerns = input.sessionId ? getConcernsBySession(input.sessionId) : [];
-  const recentConcerns = getRecentConcerns(12);
-  const categoryStats = getCategoryStats();
-  
-  // Get domain-relevant concerns if domain is specified
-  let domainRelevantConcerns: any[] = [];
-  if (input.domain) {
-    // Look for concerns that might be relevant to the domain
-    const allConcerns = [...recentConcerns];
-    domainRelevantConcerns = allConcerns.filter(concern => 
-      concern.concern.toLowerCase().includes(input.domain!.toLowerCase()) ||
-      concern.recommendation.toLowerCase().includes(input.domain!.toLowerCase())
-    );
+  if (weightedConcerns.length > 0) {
+    context += `\n**WEIGHTED ETHICAL INTELLIGENCE** (${weightedConcerns.length} relevant patterns found):\n`;
+    
+    // Domain-specific insights
+    if (domain) {
+      const domainRelevant = weightedConcerns.filter(c => 
+        c.concern.toLowerCase().includes(domain.toLowerCase()) ||
+        c.recommendation.toLowerCase().includes(domain.toLowerCase()) ||
+        (c.contextTags && c.contextTags.some(tag => tag.toLowerCase().includes(domain.toLowerCase())))
+      );
+      
+      if (domainRelevant.length > 0) {
+        context += `\n**DOMAIN-SPECIFIC PATTERNS** (${domain}):\n`;
+        domainRelevant.slice(0, 3).forEach((concern, index) => {
+          context += `${index + 1}. [Weight: ${concern.totalScore.toFixed(2)}] ${concern.category}: ${concern.concern}\n`;
+          context += `   → Success: ${concern.successScore?.toFixed(2) || 'untracked'} | ${concern.recommendation}\n`;
+        });
+      }
+    }
+    
+    // Top weighted patterns for general guidance
+    context += `\n**MOST RELEVANT ETHICAL PATTERNS:**\n`;
+    const topConcerns = weightedConcerns.slice(0, 5);
+    topConcerns.forEach((concern, index) => {
+      context += `${index + 1}. [Weight: ${concern.totalScore.toFixed(2)}] ${concern.category}: ${concern.concern}\n`;
+      context += `   → Recommendation: ${concern.recommendation}\n`;
+      if (concern.successScore !== undefined) {
+        const effectiveness = concern.successScore > 0.7 ? 'highly effective' : 
+                           concern.successScore > 0.4 ? 'moderately effective' : 'needs improvement';
+        context += `   → Effectiveness: ${effectiveness}\n`;
+      }
+    });
+    
+    // Category insights
+    const categoryDistribution = new Map<string, number>();
+    weightedConcerns.forEach(c => {
+      categoryDistribution.set(c.category, (categoryDistribution.get(c.category) || 0) + 1);
+    });
+    
+    context += `\n**PATTERN CATEGORIES TO FOCUS ON:**\n`;
+    Array.from(categoryDistribution.entries())
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .forEach(([category, count]) => {
+        context += `• ${category}: ${count} relevant patterns\n`;
+      });
   }
-  
-  // Build context from stored patterns
-  let storedPatternsContext = '';
   
   if (sessionConcerns.length > 0) {
-    storedPatternsContext += `\nPREVIOUS ETHICAL CONCERNS IN THIS SESSION:\n`;
-    storedPatternsContext += sessionConcerns.map(c => 
-      `- ${c.category}: ${c.concern} (${c.severity}) - Recommendation: ${c.recommendation}`
-    ).join('\n');
-  }
-  
-  if (domainRelevantConcerns.length > 0) {
-    storedPatternsContext += `\nRELEVANT DOMAIN-SPECIFIC ETHICAL PATTERNS:\n`;
-    storedPatternsContext += domainRelevantConcerns.slice(0, 8).map(c => 
-      `- ${c.category}: ${c.concern} - Recommendation: ${c.recommendation}`
-    ).join('\n');
+    context += `\n**SESSION-SPECIFIC GUIDANCE** (${sessionConcerns.length} conversation patterns):\n`;
+    sessionConcerns.slice(0, 3).forEach(concern => {
+      context += `• ${concern.category}: ${concern.concern} [Weight: ${concern.totalScore.toFixed(2)}]\n`;
+    });
   }
   
   if (categoryStats.length > 0) {
-    storedPatternsContext += `\nMOST COMMON ETHICAL CONCERN CATEGORIES:\n`;
-    storedPatternsContext += categoryStats.slice(0, 5).map(stat => 
-      `- ${stat.category}: ${stat.count} instances`
-    ).join('\n');
+    context += `\n**ORGANIZATIONAL TRENDS** (most common concern categories):\n`;
+    categoryStats.slice(0, 3).forEach(stat => {
+      context += `• ${stat.category}: ${stat.count} instances\n`;
+    });
   }
   
-  if (recentConcerns.length > 0) {
-    storedPatternsContext += `\nRECENT ETHICAL CONCERNS TO CONSIDER:\n`;
-    storedPatternsContext += recentConcerns.slice(0, 8).map(c => 
-      `- ${c.category}: ${c.concern} (${c.severity})`
-    ).join('\n');
-  }
+  return context;
+}
+
+export async function ethicsGuideTool(input: EthicsGuideInput): Promise<EthicsGuideOutput> {
+  console.error('Generating ethics guidance...');
   
+  // 🧠 WEIGHTED PATTERN RECOGNITION: Get intelligently scored guidance patterns
+  const weightedGuidanceConcerns = getWeightedConcerns({
+    limit: 12,
+    context: `${input.scenario} ${input.domain || ''}`,
+    sessionId: input.sessionId,
+    // Balanced weights for comprehensive guidance
+    weights: { recency: 0.25, severity: 0.25, success: 0.35, relevance: 0.15 }
+  });
+  
+  // Get session-specific patterns for contextual guidance
+  const sessionGuidanceConcerns = input.sessionId ? 
+    getWeightedSessionPatterns(input.sessionId, 6) : [];
+  
+  // Get category statistics for organizational insights
+  const categoryStats = getCategoryStats();
+  
+  // Build enriched context for guidance
+  const guidancePatternContext = buildGuidancePatternContext(
+    weightedGuidanceConcerns,
+    sessionGuidanceConcerns,
+    categoryStats,
+    input.domain
+  );
+  
+  // Fallback to basic concerns if no weighted data
+  const fallbackConcerns = weightedGuidanceConcerns.length === 0 ? getRecentConcerns(5) : [];
+  const fallbackContext = fallbackConcerns.length > 0 
+    ? `\nBasic pattern context: ${fallbackConcerns.map(c => `${c.category}: ${c.concern}`).join('; ')}`
+    : '';
+
   const prompt = `You are an AI ethics advisor providing guidance on ethical decision-making and best practices. Your role is to help users navigate complex ethical scenarios with practical, actionable advice.
+
+🧠 **ENHANCED ETHICAL INTELLIGENCE**: You have access to weighted historical ethical patterns, prioritized by success rates, relevance, and contextual similarity to provide superior guidance.
 
 CRITICAL THINKING FOCUS: Emphasize the importance of challenging assumptions, considering multiple perspectives, and avoiding confirmation bias. Encourage critical analysis rather than simply agreeing with initial viewpoints.
 
@@ -78,7 +137,9 @@ ${input.domain ? `DOMAIN/CONTEXT:\n${input.domain}` : ''}
 
 ${input.stakeholders ? `STAKEHOLDERS INVOLVED:\n${input.stakeholders.join(', ')}` : ''}
 
-${storedPatternsContext}
+${guidancePatternContext}
+
+${fallbackContext}
 
 Please provide comprehensive ethical guidance that includes:
 
