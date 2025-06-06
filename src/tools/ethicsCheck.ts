@@ -106,13 +106,27 @@ If no significant ethical concerns are found, still provide the assessment with 
   try {
     const response = await generateEthicsResponse(prompt);
     
+    // Debug: Log response length for monitoring
+    console.error('Gemini response received, length:', response.length);
+    
     // Try to parse JSON response
     try {
-      const parsed = JSON.parse(response);
+      // Clean up the response - Gemini might wrap JSON in markdown code blocks
+      let cleanResponse = response.trim();
+      
+      // Remove markdown code block formatting if present
+      if (cleanResponse.startsWith('```json')) {
+        cleanResponse = cleanResponse.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+      } else if (cleanResponse.startsWith('```')) {
+        cleanResponse = cleanResponse.replace(/^```\s*/, '').replace(/```\s*$/, '');
+      }
+      
+      const parsed = JSON.parse(cleanResponse);
       console.error('Ethics check analysis complete');
       return parsed;
     } catch (parseError) {
-      console.error('Failed to parse JSON response, returning formatted text');
+      console.error('❌ JSON parsing failed:', parseError instanceof Error ? parseError.message : 'Unknown parse error');
+      console.error('Parse error details:', parseError);
       
       // Fallback: return a structured response based on the text
       return {
