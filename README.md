@@ -8,6 +8,8 @@
 [![npm version](https://img.shields.io/npm/v/@r-huijts/ethics-vibe-check.svg)](https://www.npmjs.com/package/@r-huijts/ethics-vibe-check)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/r-huijts/ethics-check-mcp)](https://archestra.ai/mcp-catalog/r-huijts__ethics-check-mcp)
+
 ---
 
 ## The Problem: AI That's Too "Helpful"
