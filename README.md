@@ -145,6 +145,10 @@ You can also start conversations with:
 
 ---
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/r-huijts-ethics-check-mcp).
+
 ## Installation & Setup
 
 ### One-Click Install
