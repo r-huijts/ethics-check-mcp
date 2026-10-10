@@ -27,7 +27,9 @@ That's what this is — a set of tools you (or your host model, when you ask) ca
 3. **Pass a `sessionId` to see drift.** Reuse the same session id across checks in one conversation. Each call records a risk reading; later calls return a `sessionTrend` (`escalating` / `improving` / `stable`) so subtle creep becomes visible instead of a pile of disconnected snapshots.
 4. **Optional learning.** Flagged concerns can be stored (with derived context tags) so later checks in related chats weigh past patterns. Storage lives in `~/.ethics-vibe-check/data` by default so it survives different project directories and MCP launch cwd quirks.
 
-Want semi-automatic triggering? Add a system prompt / Cursor rule that tells the host when to call these tools. Templates live in [`docs/system-prompts.md`](docs/system-prompts.md). That's a power-user layer — not required for the core use case.
+**Companion skill (recommended):** [`skills/ethics-vibe-check/SKILL.md`](skills/ethics-vibe-check/SKILL.md) teaches the host when to call the tools, how to reuse `sessionId`, and when to record feedback. Copy or symlink it into your Cursor skills directory (e.g. `~/.cursor/skills/ethics-vibe-check/`). Prefer the skill over a fat always-on rule.
+
+Want semi-automatic checkpoints instead? Optional Cursor rule templates: [`docs/system-prompts.md`](docs/system-prompts.md).
 
 ---
 

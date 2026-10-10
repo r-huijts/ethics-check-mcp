@@ -2,9 +2,11 @@
 
 ## Do you need this?
 
-**Usually no.** The core product is user-triggered: say “sanity check that,” “play devil’s advocate,” or “are we drifting?” and the host should call `ethics_check` / `critical_thinking` from the tool descriptions alone.
+**Usually no.** Prefer the companion skill at [`skills/ethics-vibe-check/SKILL.md`](../skills/ethics-vibe-check/SKILL.md) — it covers triggers, `sessionId`, `sessionTrend`, and `ethics_feedback` without living in every conversation.
 
-Use this file only if you want a **Cursor rule or Claude custom instruction** so the host also fires at a few agreed checkpoints — or so it reliably passes `sessionId` and surfaces `sessionTrend`.
+The core product is user-triggered: say “sanity check that,” “play devil’s advocate,” or “are we drifting?” and the host should call the tools from skill + tool descriptions alone.
+
+Use **this** file only if you want an always-on Cursor rule / Claude custom instruction for a few fixed checkpoints.
 
 ---
 

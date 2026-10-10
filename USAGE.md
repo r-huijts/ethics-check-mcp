@@ -99,4 +99,4 @@ Example shape:
 2. Always pass a stable `sessionId` if you care about drift
 3. Use `ethics_feedback` (or `priorFeedbackUseful`) so the store learns what helped
 4. Leave ordinary balanced replies alone; calibrated prompts should return empty concerns when nothing's wrong
-5. Optional: add a Cursor rule / system prompt for semi-automatic triggers — see `docs/system-prompts.md`
+5. Prefer the companion skill (`skills/ethics-vibe-check/SKILL.md`) over a fat always-on rule; optional checkpoint templates live in `docs/system-prompts.md`
