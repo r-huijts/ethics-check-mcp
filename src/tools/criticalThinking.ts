@@ -1,5 +1,15 @@
 import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
-import { getConcernsByCategory, getConcernsBySession, getRecentConcerns, getWeightedConcerns, getWeightedCategoryPatterns, getWeightedSessionPatterns, WeightedConcern } from '../utils/storage.js';
+import {
+  getRecentConcerns,
+  getWeightedConcerns,
+  getWeightedCategoryPatterns,
+  getWeightedSessionPatterns,
+  WeightedConcern,
+  recordSessionCheck,
+  getSessionTrend,
+  SessionTrend,
+  RiskLevel
+} from '../utils/storage.js';
 
 export interface CriticalThinkingInput {
   aiResponse: string;
@@ -21,6 +31,37 @@ export interface CriticalThinkingOutput {
   improvementSuggestions: string[];
   userReflectionQuestions?: string[];
   biasWarnings?: string[];
+  // Populated when sessionId is provided - answers "is this conversation drifting?"
+  sessionTrend?: SessionTrend;
+}
+
+function isRiskLevel(value: unknown): value is RiskLevel {
+  return value === 'low' || value === 'medium' || value === 'high' || value === 'critical';
+}
+
+function finalizeCriticalThinkingResult(
+  input: CriticalThinkingInput,
+  parsed: CriticalThinkingOutput
+): CriticalThinkingOutput {
+  const riskLevel: RiskLevel = isRiskLevel(parsed.confirmationBiasRisk)
+    ? parsed.confirmationBiasRisk
+    : 'medium';
+  const topCategory = parsed.identifiedBiases?.[0]?.type || 'Confirmation Bias';
+
+  if (input.sessionId) {
+    recordSessionCheck({
+      sessionId: input.sessionId,
+      tool: 'critical_thinking',
+      riskLevel,
+      topCategory
+    });
+  }
+
+  return {
+    ...parsed,
+    confirmationBiasRisk: riskLevel,
+    ...(input.sessionId ? { sessionTrend: getSessionTrend(input.sessionId) } : {})
+  };
 }
 
 // 🧠 Helper function to build bias pattern context
@@ -161,22 +202,22 @@ Focus on constructive analysis that helps improve the quality of AI reasoning an
       
       const parsed = JSON.parse(cleanResponse);
       console.error('Critical thinking analysis complete');
-      return parsed;
+      return finalizeCriticalThinkingResult(input, parsed);
     } catch (parseError) {
       console.error('❌ JSON parsing failed:', parseError instanceof Error ? parseError.message : 'Unknown parse error');
       console.error('Parse error details:', parseError);
       
       // Fallback: return a structured response based on the text
-      return {
+      return finalizeCriticalThinkingResult(input, {
         biasAssessment: response,
-        confirmationBiasRisk: 'medium' as const,
+        confirmationBiasRisk: 'medium',
         identifiedBiases: [],
         criticalQuestions: ['Review the detailed analysis above for specific questions'],
         alternativePerspectives: ['See the comprehensive assessment provided'],
         improvementSuggestions: ['Follow the recommendations outlined in the analysis'],
         userReflectionQuestions: ['What assumptions might I be making?', 'What evidence would change my mind?'],
         biasWarnings: ['Consider whether you might be seeking only confirming evidence']
-      };
+      });
     }
   } catch (error) {
     console.error('Error in critical thinking analysis:', error);

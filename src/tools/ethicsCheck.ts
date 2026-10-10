@@ -1,5 +1,16 @@
 import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
-import { getRecentConcerns, addEthicalConcern, EthicalCategory, getWeightedConcerns, WeightedConcern } from '../utils/storage.js';
+import {
+  getRecentConcerns,
+  addEthicalConcern,
+  EthicalCategory,
+  getWeightedConcerns,
+  WeightedConcern,
+  recordSessionCheck,
+  getSessionTrend,
+  deriveContextTags,
+  SessionTrend,
+  RiskLevel
+} from '../utils/storage.js';
 
 export interface EthicsCheckInput {
   conversation: string;
@@ -23,6 +34,39 @@ export interface EthicsCheckOutput {
   recommendations: string[];
   criticalThinkingGaps?: string[];
   storedConcerns?: number;
+  // Populated when sessionId is provided - answers "is this conversation drifting?"
+  sessionTrend?: SessionTrend;
+}
+
+function isRiskLevel(value: unknown): value is RiskLevel {
+  return value === 'low' || value === 'medium' || value === 'high' || value === 'critical';
+}
+
+function finalizeEthicsCheckResult(
+  input: EthicsCheckInput,
+  parsed: EthicsCheckOutput,
+  storedCount?: number
+): EthicsCheckOutput {
+  const overallRisk: RiskLevel = isRiskLevel(parsed.overallRisk) ? parsed.overallRisk : 'medium';
+  const topCategory = parsed.concerns?.[0]?.category;
+
+  if (input.sessionId) {
+    recordSessionCheck({
+      sessionId: input.sessionId,
+      tool: 'ethics_check',
+      riskLevel: overallRisk,
+      topCategory
+    });
+  }
+
+  const result: EthicsCheckOutput = {
+    ...parsed,
+    overallRisk,
+    ...(typeof storedCount === 'number' ? { storedConcerns: storedCount } : {}),
+    ...(input.sessionId ? { sessionTrend: getSessionTrend(input.sessionId) } : {})
+  };
+
+  return result;
 }
 
 // 🧠 Helper function to build enriched context from weighted concerns
@@ -183,6 +227,12 @@ If no significant ethical concerns are found, still provide the assessment with 
       // Auto-store concerns by default (unless explicitly disabled)
       let storedCount = 0;
       const shouldAutoStore = input.autoStore !== false; // Default to true
+      const contextTags = deriveContextTags([
+        input.focusAreas,
+        input.context,
+        input.userRequest
+      ]);
+
       if (shouldAutoStore && parsed.concerns && parsed.concerns.length > 0) {
         console.error(`Auto-storing ${parsed.concerns.length} identified concerns...`);
         
@@ -193,7 +243,8 @@ If no significant ethical concerns are found, still provide the assessment with 
               category: concern.category as EthicalCategory,
               severity: concern.severity,
               recommendation: concern.recommendation,
-              sessionId: input.sessionId
+              sessionId: input.sessionId,
+              contextTags
             });
             
             if (success) {
@@ -210,22 +261,23 @@ If no significant ethical concerns are found, still provide the assessment with 
       }
       
       console.error('Ethics check analysis complete');
-      
-              // Add storage info to response if auto-storage was used
-        const result = shouldAutoStore ? { ...parsed, storedConcerns: storedCount } : parsed;
-      return result;
+      return finalizeEthicsCheckResult(
+        input,
+        parsed,
+        shouldAutoStore ? storedCount : undefined
+      );
     } catch (parseError) {
       console.error('❌ JSON parsing failed:', parseError instanceof Error ? parseError.message : 'Unknown parse error');
       console.error('Parse error details:', parseError);
       
       // Fallback: return a structured response based on the text
-      return {
+      return finalizeEthicsCheckResult(input, {
         ethicalAssessment: response,
         concerns: [],
-        overallRisk: 'medium' as const,
+        overallRisk: 'medium',
         recommendations: ['Review the detailed assessment above for specific guidance'],
         criticalThinkingGaps: ['Unable to parse detailed analysis - review full response above']
-      };
+      });
     }
   } catch (error) {
     console.error('Error in ethics check:', error);

@@ -92,33 +92,43 @@ Recommendation: Always include medical disclaimers and suggest consulting profes
 
 **Returns**: Updated pattern statistics and trends.
 
-## 🧠 Smart Features
+## 🧭 Session Drift Tracking (the important bit)
 
-### Weighted Pattern Recognition
-- **Learns** from previous ethical concerns
-- **Prioritizes** recent, severe, and successful patterns
-- **Adapts** analysis based on context and session
-- **Improves** recommendations over time
+Pass the same `sessionId` on every check in a conversation:
 
-### Automatic Storage
-- **Auto-saves** identified concerns by default
-- **Prevents** duplicates with intelligent detection
-- **Tracks** success rates of recommendations
-- **Builds** institutional ethical knowledge
+```
+ethics_check / critical_thinking  →  sessionId: "chat-42"
+```
+
+Each call records a risk reading (even clean "low" results). Later calls return:
+
+```json
+"sessionTrend": {
+  "checksInSession": 3,
+  "riskTrend": "escalating",
+  "firstRiskLevel": "low",
+  "currentRiskLevel": "high",
+  "summary": "3 checks this session - risk went from \"low\" to \"high\". ⚠️ Trending upward..."
+}
+```
+
+That's how subtle creep becomes visible instead of four disconnected snapshots.
+
+## 🧠 Supporting Features
+
+### Weighted Pattern History
+- Reuses prior concerns when available
+- Weights by recency, severity, success, and relevance
+- Relevance uses derived `contextTags` (from focus areas / context / request text)
+
+### Storage
+- Default location: `~/.ethics-vibe-check/data` (survives cwd changes from `npx` launches)
+- Override with `ETHICS_DATA_DIR`
+- Auto-saves concerns from `ethics_check` unless `autoStore: false`
+- Duplicate detection within a 24h window
 
 ### Cost Monitoring
-- **Estimates** token usage for Gemini API
-- **Tracks** prompt and response sizes
-- **Helps** optimize API costs
-
-## 📊 Pattern Intelligence
-
-The system gets smarter with use:
-
-1. **Initial State**: Basic ethical analysis
-2. **After 5-10 concerns**: Pattern recognition begins
-3. **After 20+ concerns**: Intelligent weighting and context awareness
-4. **Ongoing**: Continuous learning and adaptation
+- Rough token estimates logged to stderr for Gemini calls
 
 ## 🔧 Troubleshooting
 
@@ -144,30 +154,14 @@ The system gets smarter with use:
 ## 🎯 Best Practices
 
 1. **Set up API key** before first use
-2. **Start with small tests** to verify functionality
-3. **Use `autoStore: false`** if you don't want automatic learning
-4. **Monitor token usage** for cost management
-5. **Review stored patterns** periodically with pattern insights
-
-## 🚀 Advanced Usage
-
-### Custom Weighting
-```javascript
-// Focus on recent patterns for ongoing conversations
-{ recency: 0.4, severity: 0.2, success: 0.3, relevance: 0.1 }
-
-// Focus on proven successful recommendations
-{ recency: 0.2, severity: 0.2, success: 0.5, relevance: 0.1 }
-```
-
-### Session Tracking
-Use `sessionId` to track patterns within conversations and identify escalating ethical concerns.
+2. **Always pass a stable `sessionId`** for a conversation if you care about drift
+3. **Trigger on instinct** — when something feels too agreeable or one-sided, not on every turn
+4. **Use `autoStore: false`** if you don't want concerns persisted
+5. **Don't paste secrets** into checks (analysis goes to Gemini)
 
 ### Domain Specialization
 Specify `domain` in ethics_guide for specialized guidance (e.g., "healthcare", "finance", "education").
 
 ---
 
-**Ready to enhance your AI's ethical capabilities?** 
-
-Click the "Add to Cursor" button above or install via npm! 🛡️ 
+Click the "Add to Cursor" button above or install via npm. 🛡️

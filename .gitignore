@@ -15,8 +15,10 @@ dist/
 .env.test.local
 .env.production.local
 
-# Ethics data storage
+# Ethics data storage (cwd fallbacks; primary store is ~/.ethics-vibe-check/)
 .ethics-data/
+temp-ethics-data/
+
 
 # IDE files
 .vscode/

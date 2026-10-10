@@ -1,6 +1,6 @@
 {
   "name": "@r-huijts/ethics-vibe-check",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
   "main": "build/index.js",
   "bin": {
@@ -13,8 +13,9 @@
     "start": "node build/index.js",
     "test": "node test-ethics.js",
     "test:storage": "node storage-analysis.js",
+    "test:session": "npm run build && node tests/session-trend.test.js",
     "test:curl": "curl -X POST http://localhost:3000/test -H \"Content-Type: application/json\" -d '{\"test\": true}'",
-    "test:all": "npm run build && npm run test && npm run test:storage",
+    "test:all": "npm run build && npm run test && npm run test:session",
     "test:quick": "npm run build && echo 'Quick test: Build successful'",
     "prepublishOnly": "npm run build",
     "generate-deeplink": "node generate-cursor-link.js"
@@ -33,15 +34,15 @@
     "critical-thinking",
     "automated-learning"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "r-huijts",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ethics-check-mcp.git"
+    "url": "https://github.com/r-huijts/ethics-check-mcp.git"
   },
-  "homepage": "https://github.com/yourusername/ethics-check-mcp#readme",
+  "homepage": "https://github.com/r-huijts/ethics-check-mcp#readme",
   "bugs": {
-    "url": "https://github.com/yourusername/ethics-check-mcp/issues"
+    "url": "https://github.com/r-huijts/ethics-check-mcp/issues"
   },
   "engines": {
     "node": ">=18.0.0"

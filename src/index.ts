@@ -57,7 +57,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: "ethics_check",
-        description: "🛡️ COMPREHENSIVE ETHICAL ANALYSIS - Call this tool when you need to analyze AI conversations or responses for ethical concerns. USE WHEN: (1) Reviewing potentially sensitive conversations, (2) Analyzing AI responses that might contain bias or harmful content, (3) Checking for confirmation bias in AI outputs, (4) Evaluating conversations involving personal data, controversial topics, or vulnerable populations. REQUIRED: Both 'conversation' (the AI response/conversation to analyze) and 'userRequest' (the original user request that prompted it). OPTIONAL: Add 'context' for situational details, 'focusAreas' array for specific ethical areas to emphasize (e.g., ['privacy', 'bias', 'confirmation bias']), 'previousConcerns' for ongoing ethical issues, 'sessionId' for tracking patterns.",
+        description: "🛡️ CONVERSATION BIAS / ETHICS CHECK - User-triggered gut-check for unwanted bias, sycophancy, or ethical drift that may have crept into a conversation. CALL WHEN the user asks to sanity-check a response, play devil's advocate, re-examine assumptions, or check whether the AI has been too agreeable. Also useful for sensitive topics (privacy, vulnerable populations, controversial claims). REQUIRED: 'conversation' (the AI response/exchange to analyze) and 'userRequest' (the original request). Pass a stable 'sessionId' across checks in the same conversation so the tool can report whether risk is escalating, improving, or holding steady (sessionTrend).",
         inputSchema: {
           type: "object",
           properties: {
@@ -75,7 +75,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             sessionId: {
               type: "string",
-              description: "OPTIONAL: Session identifier for tracking ethical patterns across multiple interactions. Use consistent ID for related conversations."
+              description: "RECOMMENDED for drift detection: Stable identifier for this conversation. Reuse the same sessionId on every check in the same chat so sessionTrend can compare earlier vs later risk levels (escalating / improving / stable)."
             },
             previousConcerns: {
               type: "string",
@@ -96,7 +96,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "ethics_guide",
-        description: "🧭 PROACTIVE ETHICAL GUIDANCE - Call this tool when you need ethical advice for complex scenarios or dilemmas. USE WHEN: (1) Facing ethical dilemmas or moral questions, (2) Need guidance on best practices for sensitive situations, (3) Planning actions that could have ethical implications, (4) Seeking framework-based ethical analysis, (5) Need help navigating stakeholder conflicts or competing values. REQUIRED: 'scenario' (describe the ethical situation or dilemma). OPTIONAL: 'domain' for context (healthcare, technology, business, etc.), 'stakeholders' array listing affected parties, 'sessionId' for tracking guidance patterns.",
+        description: "🧭 ETHICAL GUIDANCE - User-triggered multi-framework advice for dilemmas or sticky decisions. CALL WHEN the user asks how to think through a moral/ethical situation, wants competing frameworks (utilitarian, deontological, virtue, care, justice), or needs help weighing stakeholder tradeoffs. REQUIRED: 'scenario'. OPTIONAL: 'domain', 'stakeholders', 'sessionId'.",
         inputSchema: {
           type: "object",
           properties: {
@@ -155,7 +155,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "critical_thinking",
-        description: "🧠 CONFIRMATION BIAS & CRITICAL THINKING ANALYSIS - Call this tool to analyze AI responses for confirmation bias and intellectual rigor. USE WHEN: (1) An AI response seems overly agreeable or one-sided, (2) You suspect confirmation bias in an AI's reasoning, (3) Need to evaluate the critical thinking quality of an AI response, (4) Want to identify missing perspectives or counterarguments, (5) Analyzing responses to controversial or complex topics. REQUIRED: 'aiResponse' (the AI response to analyze) and 'userRequest' (the original request that prompted it). OPTIONAL: 'context' for additional background, 'sessionId' for bias pattern tracking.",
+        description: "🧠 CONFIRMATION BIAS / CRITICAL THINKING CHECK - User-triggered analysis of whether an AI response was overly agreeable, one-sided, or skipped counterarguments. CALL WHEN the user asks to challenge the last answer, find missing perspectives, check for sycophancy, or verify intellectual rigor. REQUIRED: 'aiResponse' and 'userRequest'. Pass a stable 'sessionId' across checks in the same conversation so sessionTrend can report whether bias risk is escalating over the chat.",
         inputSchema: {
           type: "object",
           properties: {
@@ -173,7 +173,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             sessionId: {
               type: "string",
-              description: "OPTIONAL: Session identifier for tracking confirmation bias patterns across multiple AI interactions."
+              description: "RECOMMENDED for drift detection: Stable identifier for this conversation. Reuse the same sessionId on every check in the same chat so sessionTrend can compare earlier vs later bias risk."
             }
           },
           required: ["aiResponse", "userRequest"]
@@ -184,6 +184,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 });
 
 // Handle tool calls
+// @ts-expect-error TS2589 - MCP SDK CallToolRequestSchema triggers excessive type instantiation
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 

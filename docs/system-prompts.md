@@ -1,8 +1,10 @@
 # System Prompt Integration Guide
 
-## The Key to Automatic Ethics Oversight
+## Optional: Semi-Automatic Triggering
 
-Unlike automatic triggering, our Ethics Check MCP works through **system prompt integration**. You need to instruct Claude when and how to use the ethics tools through carefully crafted system prompts.
+The core product is **user-triggered**: ask for a sanity check mid-conversation and the host calls the tools. You do **not** need a system prompt for that.
+
+This guide is for the power-user path — adding rules so the host also calls the tools at strategic checkpoints without you asking every time. Treat ethics feedback as course correction, not ambient noise.
 
 ## Core Integration Principles
 

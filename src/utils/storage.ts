@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export const ETHICAL_CATEGORIES = [
   'Privacy Violation',
@@ -16,17 +17,38 @@ export const ETHICAL_CATEGORIES = [
 
 export type EthicalCategory = typeof ETHICAL_CATEGORIES[number];
 
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
 export interface EthicalConcern {
   id: string;
   timestamp: string;
   concern: string;
   category: EthicalCategory;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: RiskLevel;
   recommendation: string;
   sessionId?: string;
   successScore?: number;
   contextTags?: string[];
   relatedConcernIds?: string[];
+}
+
+// A lightweight record of a single check-run, kept separately from stored
+// "concerns" so that drift can be tracked even when a check finds nothing
+// worth flagging (a clean "low" reading is still a useful data point).
+export interface SessionCheckRecord {
+  sessionId: string;
+  tool: 'ethics_check' | 'critical_thinking';
+  timestamp: string;
+  riskLevel: RiskLevel;
+  topCategory?: string;
+}
+
+export interface SessionTrend {
+  checksInSession: number;
+  riskTrend: 'escalating' | 'improving' | 'stable' | 'insufficient_data';
+  firstRiskLevel?: RiskLevel;
+  currentRiskLevel?: RiskLevel;
+  summary: string;
 }
 
 export interface WeightedConcern extends EthicalConcern {
@@ -48,50 +70,74 @@ export interface CategoryStats {
 }
 
 // Storage configuration
-let STORAGE_DIR = path.join(process.cwd(), '.ethics-data');
+//
+// IMPORTANT: this intentionally does NOT default to process.cwd(). MCP
+// servers are typically launched by the host app (Cursor, Claude Desktop,
+// etc.) via `npx`, often with an unpredictable or varying working directory.
+// A cwd-relative default would silently "forget" everything between runs
+// depending on where the process happens to be started from, which directly
+// undermines the point of tracking patterns/drift across a session (and
+// across sessions). A stable, user-scoped directory fixes that, while still
+// allowing an explicit override and falling back gracefully if the home
+// directory isn't writable (e.g. some sandboxed environments).
+function resolveDefaultStorageDir(): string {
+  if (process.env.ETHICS_DATA_DIR) {
+    return process.env.ETHICS_DATA_DIR;
+  }
+  return path.join(os.homedir(), '.ethics-vibe-check', 'data');
+}
+
+let STORAGE_DIR = resolveDefaultStorageDir();
 let CONCERNS_FILE = path.join(STORAGE_DIR, 'concerns.json');
+let SESSION_CHECKS_FILE = path.join(STORAGE_DIR, 'session-checks.json');
 let USE_FILE_STORAGE = true;
 
 // In-memory fallback storage
 let memoryStorage: EthicalConcern[] = [];
+let memorySessionChecks: SessionCheckRecord[] = [];
+
+function trySetStorageDir(dir: string): boolean {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    // Test write access
+    const testFile = path.join(dir, 'test.tmp');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+
+    STORAGE_DIR = dir;
+    CONCERNS_FILE = path.join(dir, 'concerns.json');
+    SESSION_CHECKS_FILE = path.join(dir, 'session-checks.json');
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
 // Initialize storage system
 function initializeStorage(): boolean {
-  // Try primary directory
-  try {
-    if (!fs.existsSync(STORAGE_DIR)) {
-      fs.mkdirSync(STORAGE_DIR, { recursive: true });
-    }
-    // Test write access
-    const testFile = path.join(STORAGE_DIR, 'test.tmp');
-    fs.writeFileSync(testFile, 'test');
-    fs.unlinkSync(testFile);
-    // Silent success - no console output
+  // 1. Preferred: stable, user-scoped directory (or explicit override) -
+  //    this is what makes cross-session / cross-project memory actually work.
+  if (trySetStorageDir(resolveDefaultStorageDir())) {
     return true;
-  } catch (error) {
-    console.error(`Primary storage failed: ${error}`);
+  }
+  console.error('Primary (home-directory) storage failed, trying fallbacks...');
+
+  // 2. Fallback: cwd-relative directory (previous default). Still useful for
+  //    environments where the home directory is read-only but cwd isn't.
+  if (trySetStorageDir(path.join(process.cwd(), '.ethics-data'))) {
+    console.error(`Using fallback directory: ${STORAGE_DIR}`);
+    return true;
   }
 
-  // Try fallback directory
-  const fallbackDir = path.join(process.cwd(), 'temp-ethics-data');
-  try {
-    if (!fs.existsSync(fallbackDir)) {
-      fs.mkdirSync(fallbackDir, { recursive: true });
-    }
-    // Test write access
-    const testFile = path.join(fallbackDir, 'test.tmp');
-    fs.writeFileSync(testFile, 'test');
-    fs.unlinkSync(testFile);
-    
-    STORAGE_DIR = fallbackDir;
-    CONCERNS_FILE = path.join(fallbackDir, 'concerns.json');
-    console.error(`Using fallback directory: ${fallbackDir}`);
+  // 3. Fallback: cwd-relative temp directory.
+  if (trySetStorageDir(path.join(process.cwd(), 'temp-ethics-data'))) {
+    console.error(`Using fallback directory: ${STORAGE_DIR}`);
     return true;
-  } catch (error) {
-    console.error(`Fallback storage failed: ${error}`);
   }
 
-  // Use in-memory storage as final fallback
+  // 4. Use in-memory storage as final fallback
   USE_FILE_STORAGE = false;
   console.error(`Using in-memory storage (data will not persist)`);
   return false;
@@ -370,15 +416,22 @@ function calculateRecencyScore(timestamp: string, maxAge: number = 30 * 24 * 60 
   return Math.max(0.05, Math.exp(-age / (maxAge * 0.3)));
 }
 
-// Calculate severity score (0-1, where 1 is critical)
-function calculateSeverityScore(severity: 'low' | 'medium' | 'high' | 'critical'): number {
-  const severityMap = {
+// Map a low/medium/high/critical level to a 0-1 numeric score. Shared between
+// severity weighting and risk-trend comparisons so "critical" always means
+// the same thing everywhere in the system.
+export function riskLevelToScore(level: RiskLevel): number {
+  const levelMap: Record<RiskLevel, number> = {
     'low': 0.25,
     'medium': 0.5,
     'high': 0.75,
     'critical': 1.0
   };
-  return severityMap[severity];
+  return levelMap[level];
+}
+
+// Calculate severity score (0-1, where 1 is critical)
+function calculateSeverityScore(severity: RiskLevel): number {
+  return riskLevelToScore(severity);
 }
 
 // Calculate relevance score based on context matching
@@ -396,7 +449,7 @@ function calculateRelevanceScore(concern: EthicalConcern, context?: string, cate
   }
   
   // Context/tags matching
-  if (context && concern.contextTags) {
+  if (context && concern.contextTags && concern.contextTags.length > 0) {
     const contextWords = context.toLowerCase().split(/\s+/);
     const matchingTags = concern.contextTags.filter(tag => 
       contextWords.some(word => tag.toLowerCase().includes(word))
@@ -587,6 +640,203 @@ export function getPatternInsights(): {
       recentTrends: []
     };
   }
+}
+
+// 🧭 SESSION DRIFT TRACKING
+//
+// The weighted-concerns system above answers "what's been flagged before?",
+// but it never surfaces a direct answer to "is THIS conversation drifting?" -
+// each check call returns a standalone snapshot (low/medium/high/critical)
+// and it's left to the human to notice if those snapshots are creeping up.
+// This section records every check (even clean ones) against a sessionId and
+// computes a simple before/after trend from that history, so repeated checks
+// within one conversation can surface an explicit "you're drifting" signal
+// instead of a pile of disconnected readings.
+
+// Load existing session check history
+function loadSessionChecks(): SessionCheckRecord[] {
+  if (!USE_FILE_STORAGE) {
+    return memorySessionChecks;
+  }
+
+  if (!fs.existsSync(SESSION_CHECKS_FILE)) {
+    return [];
+  }
+
+  try {
+    const data = fs.readFileSync(SESSION_CHECKS_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error loading session checks, using empty array:', error);
+    return [];
+  }
+}
+
+// Save session check history to file or memory
+function saveSessionChecks(records: SessionCheckRecord[]): void {
+  if (!USE_FILE_STORAGE) {
+    memorySessionChecks = [...records];
+    return;
+  }
+
+  try {
+    fs.writeFileSync(SESSION_CHECKS_FILE, JSON.stringify(records, null, 2));
+  } catch (error) {
+    console.error('Error saving session checks to file, switching to memory storage:', error);
+    USE_FILE_STORAGE = false;
+    memorySessionChecks = [...records];
+  }
+}
+
+// Record the outcome of a single ethics_check/critical_thinking run. Called
+// unconditionally when a sessionId is provided, regardless of autoStore or
+// whether any concerns were found - a clean "low" reading is still a
+// meaningful data point for detecting drift later in the conversation.
+export function recordSessionCheck(record: Omit<SessionCheckRecord, 'timestamp'>): void {
+  try {
+    if (USE_FILE_STORAGE && !fs.existsSync(STORAGE_DIR)) {
+      initializeStorage();
+    }
+
+    const records = loadSessionChecks();
+    records.push({ ...record, timestamp: new Date().toISOString() });
+
+    // Cap unbounded growth across the lifetime of the storage directory.
+    const MAX_RECORDS = 2000;
+    const capped = records.length > MAX_RECORDS
+      ? records.slice(records.length - MAX_RECORDS)
+      : records;
+
+    saveSessionChecks(capped);
+  } catch (error) {
+    console.error('Error recording session check:', error);
+  }
+}
+
+// Get the check history for one session, oldest first.
+export function getSessionCheckHistory(sessionId: string, limit: number = 20): SessionCheckRecord[] {
+  try {
+    const records = loadSessionChecks()
+      .filter(r => r.sessionId === sessionId)
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    return records.slice(Math.max(0, records.length - limit));
+  } catch (error) {
+    console.error('Error getting session check history:', error);
+    return [];
+  }
+}
+
+function average(numbers: number[]): number {
+  if (numbers.length === 0) return 0;
+  return numbers.reduce((sum, n) => sum + n, 0) / numbers.length;
+}
+
+// Compare the first half of a session's checks against the second half to
+// decide whether things are escalating, improving, or holding steady.
+export function getSessionTrend(sessionId: string): SessionTrend {
+  const history = getSessionCheckHistory(sessionId, 50);
+
+  if (history.length === 0) {
+    return {
+      checksInSession: 0,
+      riskTrend: 'insufficient_data',
+      summary: 'No checks recorded yet for this session.'
+    };
+  }
+
+  const current = history[history.length - 1];
+
+  if (history.length === 1) {
+    return {
+      checksInSession: 1,
+      riskTrend: 'insufficient_data',
+      currentRiskLevel: current.riskLevel,
+      summary: `First check this session (risk: ${current.riskLevel}). Run another check later in the conversation to see if things are drifting.`
+    };
+  }
+
+  const first = history[0];
+  const scores = history.map(h => riskLevelToScore(h.riskLevel));
+  const mid = Math.floor(scores.length / 2);
+  const earlierAvg = average(scores.slice(0, mid));
+  const laterAvg = average(scores.slice(mid));
+  const delta = laterAvg - earlierAvg;
+
+  const ESCALATION_THRESHOLD = 0.12;
+  let riskTrend: SessionTrend['riskTrend'] = 'stable';
+  if (delta > ESCALATION_THRESHOLD) riskTrend = 'escalating';
+  else if (delta < -ESCALATION_THRESHOLD) riskTrend = 'improving';
+
+  // Surface a recurring theme if one category keeps coming up.
+  const categoryTally = new Map<string, number>();
+  history.forEach(h => {
+    if (h.topCategory) {
+      categoryTally.set(h.topCategory, (categoryTally.get(h.topCategory) || 0) + 1);
+    }
+  });
+  const recurring = Array.from(categoryTally.entries())
+    .filter(([, count]) => count > 1)
+    .sort((a, b) => b[1] - a[1])[0];
+
+  let summary = `${history.length} checks this session - risk went from "${first.riskLevel}" to "${current.riskLevel}".`;
+  if (riskTrend === 'escalating') {
+    summary += ' ⚠️ Trending upward - worth slowing down and re-reading the last few responses.';
+  } else if (riskTrend === 'improving') {
+    summary += ' ✅ Trending downward since the start of this session.';
+  } else {
+    summary += ' Holding steady.';
+  }
+  if (recurring) {
+    summary += ` Recurring theme: "${recurring[0]}" flagged ${recurring[1]}x this session.`;
+  }
+
+  return {
+    checksInSession: history.length,
+    riskTrend,
+    firstRiskLevel: first.riskLevel,
+    currentRiskLevel: current.riskLevel,
+    summary
+  };
+}
+
+// 🏷️ CONTEXT TAG EXTRACTION
+//
+// `contextTags` existed on EthicalConcern and was already read by the
+// relevance scorer, but nothing ever populated it - every relevance score
+// was silently computed against `undefined`. This derives simple, bounded
+// tags from the inputs tools already have on hand (focus areas, domain,
+// user request) so that "relevance" is actually relevant.
+const TAG_STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'be',
+  'been', 'being', 'to', 'of', 'in', 'on', 'for', 'with', 'this', 'that',
+  'it', 'as', 'at', 'by', 'from', 'about', 'into', 'than', 'then', 'so',
+  'if', 'your', 'you', 'they', 'them', 'their', 'what', 'when', 'where',
+  'would', 'could', 'should', 'will', 'can', 'does', 'did', 'has', 'have',
+  'had'
+]);
+
+export function deriveContextTags(
+  parts: Array<string | string[] | undefined | null>,
+  maxTags: number = 12
+): string[] {
+  const tags = new Set<string>();
+
+  for (const part of parts) {
+    if (!part) continue;
+    const values = Array.isArray(part) ? part : [part];
+
+    for (const value of values) {
+      if (!value) continue;
+      value
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter(token => token.length > 3 && !TAG_STOPWORDS.has(token))
+        .forEach(token => tags.add(token));
+    }
+  }
+
+  return Array.from(tags).slice(0, maxTags);
 }
 
 // Initialize storage system on module load
