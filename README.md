@@ -63,7 +63,7 @@ Thumbs-up/down on a prior recommendation. Closes the learning loop so `successSc
 > → `sessionTrend.riskTrend` becomes `"escalating"` with a short summary of the creep
 
 **Customize what you're hunting:**
-Add a short rule to Cursor / Claude custom instructions:
+Add a short rule to Cursor / Claude custom instructions (full guide: [`docs/system-prompts.md`](docs/system-prompts.md)):
 
 ```markdown
 ## Ethics vibe check
@@ -71,6 +71,7 @@ When I ask to sanity-check, play devil's advocate, or check for drift:
 - Call ethics_check or critical_thinking
 - Always pass a stable sessionId for this conversation
 - Surface the sessionTrend summary if risk is escalating
+- If I say the pushback helped / didn't, call ethics_feedback
 Challenge me on: [your typical biases]
 ```
 
