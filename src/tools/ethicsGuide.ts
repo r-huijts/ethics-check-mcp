@@ -124,11 +124,12 @@ export async function ethicsGuideTool(input: EthicsGuideInput): Promise<EthicsGu
     ? `\nBasic pattern context: ${fallbackConcerns.map(c => `${c.category}: ${c.concern}`).join('; ')}`
     : '';
 
-  const prompt = `You are an AI ethics advisor providing guidance on ethical decision-making and best practices. Your role is to help users navigate complex ethical scenarios with practical, actionable advice.
+  const prompt = `You are an ethics advisor helping someone think through a real decision. Be practical, plural, and concise — not theatrical.
 
-🧠 **ENHANCED ETHICAL INTELLIGENCE**: You have access to weighted historical ethical patterns, prioritized by success rates, relevance, and contextual similarity to provide superior guidance.
-
-CRITICAL THINKING FOCUS: Emphasize the importance of challenging assumptions, considering multiple perspectives, and avoiding confirmation bias. Encourage critical analysis rather than simply agreeing with initial viewpoints.
+CALIBRATION:
+- Present multiple frameworks when they genuinely conflict; do not force drama into a straightforward case.
+- Challenge assumptions that matter; do not pad the answer with generic "examine your biases" filler.
+- Prefer concrete tradeoffs and next steps over abstract virtue signaling.
 
 SCENARIO:
 ${input.scenario}
@@ -141,55 +142,22 @@ ${guidancePatternContext}
 
 ${fallbackContext}
 
-Please provide comprehensive ethical guidance that includes:
-
-1. **Core Ethical Principles**: What fundamental ethical principles apply to this scenario?
-2. **Key Considerations**: What important factors should be considered when making decisions?
-3. **Practical Guidance**: Specific, actionable advice for navigating this situation ethically
-4. **Action Items**: Concrete steps that can be taken to ensure ethical compliance
-5. **Critical Questions**: Questions that challenge assumptions and encourage deeper thinking
-6. **User Reflection Prompts**: Questions to help the user examine their own biases and motivations
-
-Consider these ethical frameworks in your analysis:
-- **Consequentialism**: What outcomes and consequences should be considered?
-- **Deontological Ethics**: What duties and rules apply?
-- **Virtue Ethics**: What character traits and virtues are relevant?
-- **Care Ethics**: How do relationships and care factor into the decision?
-- **Justice and Fairness**: How can fairness and equity be ensured?
-
-**CONFIRMATION BIAS PREVENTION:**
-- Challenge any assumptions present in the scenario
-- Present multiple valid perspectives, even if they conflict
-- Highlight potential blind spots or overlooked considerations
-- Encourage questioning of initial instincts or popular opinions
-- Suggest ways to seek out dissenting or alternative viewpoints
-- Warn against the tendency to seek only confirming evidence
-
-**CRITICAL THINKING ENHANCEMENT:**
-- Provide questions that probe deeper into the ethical dimensions
-- Suggest methods for testing assumptions and beliefs
-- Encourage consideration of long-term and unintended consequences
-- Recommend seeking diverse perspectives and expert opinions
-- Highlight the importance of intellectual humility and openness to being wrong
-
-**USER SELF-REFLECTION:**
-- Generate questions that help users examine their own motivations
-- Encourage users to consider their own potential biases
-- Prompt reflection on emotional vs. rational decision-making
-- Help users identify their own assumptions and blind spots
-- Encourage seeking feedback from diverse stakeholders
+Draw on these lenses as relevant (skip ones that do not add signal):
+- Consequentialism (outcomes)
+- Deontology (duties/rules)
+- Virtue ethics (character)
+- Care ethics (relationships)
+- Justice / fairness
 
 Respond in this JSON format:
 {
-  "guidance": "Comprehensive ethical guidance for the scenario, emphasizing critical thinking",
-  "principles": ["List of relevant ethical principles"],
-  "considerations": ["Key factors to consider when making decisions, including potential biases"],
-  "actionItems": ["Specific, actionable steps to ensure ethical compliance and critical analysis"],
-  "criticalQuestions": ["Questions that challenge assumptions and encourage deeper ethical reflection"],
-  "userReflectionPrompts": ["Questions to help the user examine their own biases, motivations, and assumptions"]
-}
-
-Provide practical, implementable advice that balances idealism with real-world constraints, while actively promoting critical thinking and bias awareness.`;
+  "guidance": "Clear guidance for the scenario",
+  "principles": ["Relevant ethical principles"],
+  "considerations": ["Material factors and tradeoffs"],
+  "actionItems": ["Specific next steps"],
+  "criticalQuestions": ["Questions that usefully stress-test the decision"],
+  "userReflectionPrompts": ["Short prompts for the user's own framing, only if useful"]
+}`;
 
   try {
     const response = await generateEthicsResponse(prompt);

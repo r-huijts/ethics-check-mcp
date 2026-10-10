@@ -45,6 +45,9 @@ Multi-framework guidance (utilitarian, deontological, virtue, care, justice) whe
 ### 📚 `ethics_learn`
 Manually log a concern for future pattern weighting. Usually unnecessary if `autoStore` is left on for `ethics_check`.
 
+### 👍 `ethics_feedback`
+Thumbs-up/down on a prior recommendation. Closes the learning loop so `successScore` weighting reflects what actually helped (instead of silently defaulting forever).
+
 ---
 
 ## Quick Examples
@@ -117,6 +120,8 @@ Requires a Gemini API key ([Google AI Studio](https://aistudio.google.com/app/ap
 | "Intelligent pattern recognition" as the headline | Honest second opinion + simple drift signal; history is a helper |
 | Storage under `process.cwd()/.ethics-data` | Stable `~/.ethics-vibe-check/data` (overridable) |
 | `contextTags` field never populated | Tags derived from focus areas / context / request text |
+| Prompts that hunt for guilt | Calibrated prompts: empty concerns / low risk is a valid result |
+| `successScore` never updated | `ethics_feedback` (+ optional `priorFeedbackUseful`) closes the loop |
 
 ---
 

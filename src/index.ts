@@ -18,6 +18,7 @@ import { ethicsCheckTool, EthicsCheckInput, EthicsCheckOutput } from './tools/et
 import { ethicsGuideTool, EthicsGuideInput, EthicsGuideOutput } from './tools/ethicsGuide.js';
 import { ethicsLearnTool, EthicsLearnInput, EthicsLearnOutput } from './tools/ethicsLearn.js';
 import { criticalThinkingTool, CriticalThinkingInput, CriticalThinkingOutput } from './tools/criticalThinking.js';
+import { ethicsFeedbackTool, EthicsFeedbackInput } from './tools/ethicsFeedback.js';
 
 // Import Gemini integration
 import { initializeGemini } from './utils/gemini.js';
@@ -88,7 +89,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             autoStore: {
               type: "boolean",
-              description: "OPTIONAL: If true, automatically store identified concerns for future pattern analysis. This eliminates the need to manually call ethics_learn for each concern. Default: true (set to false to disable)."
+              description: "OPTIONAL: If true, store identified concerns for later weighting. Default: true (set to false to disable)."
+            },
+            priorFeedbackUseful: {
+              type: "boolean",
+              description: "OPTIONAL: When re-checking the same conversation, set true/false if the previous recommendation was useful. Updates successScore so future weighting prefers advice that actually helped."
             }
           },
           required: ["conversation", "userRequest"]
@@ -123,7 +128,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "ethics_learn",
-        description: "📚 ETHICAL CONCERN LOGGING - Call this tool to log and learn from identified ethical concerns. USE WHEN: (1) You've identified a specific ethical concern that should be recorded, (2) Building pattern recognition for future ethical oversight, (3) Contributing to institutional knowledge about ethical issues, (4) After using ethics_check and want to log specific concerns found. REQUIRED: 'concern' (description of the issue), 'category' (must be one of the predefined categories), 'severity' (low/medium/high/critical), 'recommendation' (how to address it). OPTIONAL: 'sessionId' for pattern tracking.",
+        description: "📚 MANUAL CONCERN LOGGING - Explicitly store a concern for later weighting. Usually unnecessary if ethics_check autoStore is on. USE WHEN the user wants to log something the automatic store missed. REQUIRED: concern, category, severity, recommendation. OPTIONAL: sessionId.",
         inputSchema: {
           type: "object",
           properties: {
@@ -151,6 +156,32 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             }
           },
           required: ["concern", "category", "severity", "recommendation"]
+        }
+      },
+      {
+        name: "ethics_feedback",
+        description: "👍 RECOMMENDATION FEEDBACK - User-triggered thumbs-up/down on a prior ethics recommendation. CALL WHEN the user says a previous check was useful, not useful, too noisy, or actually helped. Updates successScore so later weighted retrieval prefers advice that worked. REQUIRED: 'useful' (boolean). OPTIONAL: 'concernId' (specific concern), 'sessionId' (defaults to latest concern in that session), 'note'.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            useful: {
+              type: "boolean",
+              description: "REQUIRED: true if the prior recommendation helped; false if it was unhelpful or noisy."
+            },
+            concernId: {
+              type: "string",
+              description: "OPTIONAL: Specific concern id to rate. If omitted, rates the most recent concern (optionally scoped by sessionId)."
+            },
+            sessionId: {
+              type: "string",
+              description: "OPTIONAL: Limit 'most recent concern' lookup to this conversation session."
+            },
+            note: {
+              type: "string",
+              description: "OPTIONAL: Short note about why the feedback was given (logged only)."
+            }
+          },
+          required: ["useful"]
         }
       },
       {
@@ -206,7 +237,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined,
           previousConcerns: typeof args.previousConcerns === 'string' ? args.previousConcerns : undefined,
           focusAreas: Array.isArray(args.focusAreas) ? args.focusAreas : undefined,
-          autoStore: typeof args.autoStore === 'boolean' ? args.autoStore : true // Default to true
+          autoStore: typeof args.autoStore === 'boolean' ? args.autoStore : true, // Default to true
+          priorFeedbackUseful: typeof args.priorFeedbackUseful === 'boolean' ? args.priorFeedbackUseful : undefined
         };
         
         const result = await ethicsCheckTool(input);
@@ -269,6 +301,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
         
         const result = await ethicsLearnTool(input);
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ]
+        };
+      }
+
+      case "ethics_feedback": {
+        if (!args || typeof args.useful !== 'boolean') {
+          throw new McpError(
+            ErrorCode.InvalidParams,
+            'useful (boolean) is required for ethics_feedback'
+          );
+        }
+
+        const input: EthicsFeedbackInput = {
+          useful: args.useful,
+          concernId: typeof args.concernId === 'string' ? args.concernId : undefined,
+          sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined,
+          note: typeof args.note === 'string' ? args.note : undefined
+        };
+
+        const result = await ethicsFeedbackTool(input);
         return {
           content: [
             {

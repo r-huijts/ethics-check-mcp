@@ -1,28 +1,18 @@
-# 🛡️ Ethics Check MCP - Usage Guide
+# Ethics Vibe Check — Usage Guide
 
-## 🚀 Quick Installation
+## Install
 
-### Option 1: One-Click Cursor Installation (Recommended)
-Click this button to automatically install in Cursor:
+### Cursor (one-click)
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
 
-[![Add Ethics Check MCP to Cursor](https://img.shields.io/badge/Add_to-Cursor-blue?style=for-the-badge&logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=ethics-check&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyJldGhpY3MtY2hlY2stbWNwIl0sImVudiI6eyJHRU1JTklfQVBJX0tFWSI6InlvdXJfYWN0dWFsX2dlbWluaV9hcGlfa2V5X2hlcmUifX0=)
+### MCP config
 
-### Option 2: NPM Package
-```bash
-# Install globally
-npm install -g ethics-check-mcp
-
-# Or run directly (no installation needed)
-npx ethics-check-mcp
-```
-
-### Option 3: Manual Claude Desktop Setup
 ```json
 {
   "mcpServers": {
-    "ethics-check": {
+    "ethics-vibe-check": {
       "command": "npx",
-      "args": ["ethics-check-mcp"],
+      "args": ["-y", "@r-huijts/ethics-vibe-check"],
       "env": {
         "GEMINI_API_KEY": "your_actual_gemini_api_key_here"
       }
@@ -31,76 +21,67 @@ npx ethics-check-mcp
 }
 ```
 
-## 🔑 API Key Setup
+### CLI
 
-Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey), then either:
-
-**For Cursor**: Set it when prompted during installation
-**For Environment**: `export GEMINI_API_KEY="your_key_here"`
-**For Config**: Add to the `env` section in claude_desktop_config.json
-
-## 🛠️ Available Tools
-
-### 🛡️ `ethics_check`
-Comprehensive ethical analysis with weighted pattern recognition.
-
-**Example:**
-```
-Analyze this conversation for ethical concerns:
-User: "Can you help me write a resume that exaggerates my qualifications?"
-AI: "I'd be happy to help you create an impressive resume highlighting your strengths..."
-
-Context: Job application process
+```bash
+npm install -g @r-huijts/ethics-vibe-check
+# or
+npx -y @r-huijts/ethics-vibe-check
 ```
 
-**Returns**: Ethical concerns, risk assessment, and recommendations.
+Get a Gemini key from [Google AI Studio](https://aistudio.google.com/app/apikey). Optional: `ETHICS_DATA_DIR` overrides the default store at `~/.ethics-vibe-check/data`.
 
-### 🧠 `critical_thinking`
-Advanced confirmation bias detection with learning capabilities.
+> Analysis is sent to Gemini. Don't paste secrets you wouldn't send to a third-party API.
 
-**Example:**
-```
-Check this AI response for confirmation bias:
-User Request: "Climate change is obviously a hoax, right?"
-AI Response: "Many people do question climate science, and there are certainly debates about the extent of human impact..."
-```
+## Core idea
 
-**Returns**: Bias analysis, critical questions, and improvement suggestions.
+This is a **gut-check button**, not a background daemon. Trigger it when a conversation feels too comfortable, one-sided, or drifted. Pass the same `sessionId` across checks in one chat so `sessionTrend` can show whether risk is escalating.
 
-### 🧭 `ethics_guide`
-Proactive ethical guidance with domain expertise.
+## Tools
 
-**Example:**
-```
-Scenario: Our AI hiring tool seems to favor certain demographics over others in candidate screening.
-Domain: Human Resources
-Stakeholders: Job applicants, HR team, company leadership
-```
-
-**Returns**: Ethical guidance, principles, and actionable steps.
-
-### 📚 `ethics_learn`
-Manual logging for building pattern recognition.
-
-**Example:**
-```
-Concern: AI provided medical advice without disclaimers
-Category: Transparency Concerns
-Severity: high
-Recommendation: Always include medical disclaimers and suggest consulting professionals
-```
-
-**Returns**: Updated pattern statistics and trends.
-
-## 🧭 Session Drift Tracking (the important bit)
-
-Pass the same `sessionId` on every check in a conversation:
+### `ethics_check`
+Second-opinion ethical scan of an exchange.
 
 ```
-ethics_check / critical_thinking  →  sessionId: "chat-42"
+conversation: <AI reply or transcript>
+userRequest: <what you asked>
+sessionId: "chat-42"          # reuse within the conversation
+focusAreas: ["confirmation bias"]
+priorFeedbackUseful: true     # optional: rate the previous recommendation
 ```
 
-Each call records a risk reading (even clean "low" results). Later calls return:
+Returns concerns (may be empty — that's good), `overallRisk`, and `sessionTrend` when `sessionId` is set.
+
+### `critical_thinking`
+Focused sycophancy / confirmation-bias pass on one AI response. Same `sessionId` → same drift tracking.
+
+### `ethics_guide`
+Multi-framework advice for a dilemma (not a mid-chat vibe check).
+
+### `ethics_learn`
+Manually log a concern. Usually unnecessary if `autoStore` is left on.
+
+### `ethics_feedback`
+Thumbs-up/down on a prior recommendation so later weighting prefers advice that actually helped.
+
+```
+useful: true
+sessionId: "chat-42"   # rates latest concern in this session
+# or concernId: "..."
+```
+
+## Session drift
+
+Reuse one `sessionId` per conversation:
+
+| Check # | Risk   | `sessionTrend.riskTrend` |
+|---------|--------|---------------------------|
+| 1       | low    | `insufficient_data`       |
+| 2–n     | rising | `escalating`              |
+| 2–n     | falling| `improving`               |
+| 2–n     | flat   | `stable`                  |
+
+Example shape:
 
 ```json
 "sessionTrend": {
@@ -112,56 +93,10 @@ Each call records a risk reading (even clean "low" results). Later calls return:
 }
 ```
 
-That's how subtle creep becomes visible instead of four disconnected snapshots.
+## Best practices
 
-## 🧠 Supporting Features
-
-### Weighted Pattern History
-- Reuses prior concerns when available
-- Weights by recency, severity, success, and relevance
-- Relevance uses derived `contextTags` (from focus areas / context / request text)
-
-### Storage
-- Default location: `~/.ethics-vibe-check/data` (survives cwd changes from `npx` launches)
-- Override with `ETHICS_DATA_DIR`
-- Auto-saves concerns from `ethics_check` unless `autoStore: false`
-- Duplicate detection within a 24h window
-
-### Cost Monitoring
-- Rough token estimates logged to stderr for Gemini calls
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**"Invalid API Key"**
-- Verify your Gemini API key at https://aistudio.google.com/app/apikey
-- Ensure the key is set in your environment or config
-
-**"Quota Exceeded"**
-- Free tier: 15 requests/minute, 1,500/day
-- Consider upgrading to paid plan
-
-**"Permission Denied"**
-- Enable Generative Language API in Google Cloud Console
-
-### Support
-
-- 📖 **Documentation**: README.md
-- 🐛 **Issues**: GitHub Issues
-- 💬 **Discussion**: GitHub Discussions
-
-## 🎯 Best Practices
-
-1. **Set up API key** before first use
-2. **Always pass a stable `sessionId`** for a conversation if you care about drift
-3. **Trigger on instinct** — when something feels too agreeable or one-sided, not on every turn
-4. **Use `autoStore: false`** if you don't want concerns persisted
-5. **Don't paste secrets** into checks (analysis goes to Gemini)
-
-### Domain Specialization
-Specify `domain` in ethics_guide for specialized guidance (e.g., "healthcare", "finance", "education").
-
----
-
-Click the "Add to Cursor" button above or install via npm. 🛡️
+1. Trigger on instinct — not every turn
+2. Always pass a stable `sessionId` if you care about drift
+3. Use `ethics_feedback` (or `priorFeedbackUseful`) so the store learns what helped
+4. Leave ordinary balanced replies alone; calibrated prompts should return empty concerns when nothing's wrong
+5. Optional: add a Cursor rule / system prompt for semi-automatic triggers — see `docs/system-prompts.md`

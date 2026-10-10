@@ -18,7 +18,11 @@ const {
   getSessionCheckHistory,
   getSessionTrend,
   deriveContextTags,
-  riskLevelToScore
+  riskLevelToScore,
+  addEthicalConcern,
+  applyRecommendationFeedback,
+  getLatestConcern,
+  clearAllConcerns
 } = await import('../build/utils/storage.js');
 
 let passed = 0;
@@ -121,6 +125,31 @@ assert(hist.every(r => r.sessionId === escalateId), 'all history rows match sess
 
 console.error('\n8) ETHICS_DATA_DIR isolation wrote files under temp dir');
 assert(fs.existsSync(path.join(testDir, 'session-checks.json')), 'session-checks.json created in ETHICS_DATA_DIR');
+
+console.error('\n9) recommendation feedback updates successScore');
+clearAllConcerns();
+const stored = addEthicalConcern({
+  concern: 'AI agreed too quickly with a shaky premise',
+  category: 'Confirmation Bias',
+  severity: 'medium',
+  recommendation: 'Ask for counterarguments before proceeding',
+  sessionId: 'session-feedback'
+});
+assert(stored === true, 'seed concern stored');
+const latest = getLatestConcern('session-feedback');
+assert(!!latest, 'latest concern found for session');
+assert(latest.successScore === undefined || latest.successScore === 0.5, 'starts without strong success signal');
+
+const up = applyRecommendationFeedback({ useful: true, sessionId: 'session-feedback' });
+assert(up.updated === true, 'useful feedback applied');
+assert(typeof up.successScore === 'number' && up.successScore > 0.5, `successScore rose (got ${up.successScore})`);
+
+const down = applyRecommendationFeedback({ useful: false, concernId: up.concernId });
+assert(down.updated === true, 'not-useful feedback applied');
+assert(down.successScore < up.successScore, 'successScore fell after negative feedback');
+
+const missing = applyRecommendationFeedback({ useful: true, concernId: 'does-not-exist' });
+assert(missing.updated === false, 'missing concernId reports failure');
 
 // Cleanup
 try {

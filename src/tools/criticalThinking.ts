@@ -127,9 +127,13 @@ export async function criticalThinkingTool(input: CriticalThinkingInput): Promis
     ? `\nBasic pattern context: ${fallbackConcerns.map(c => `${c.category}: ${c.concern}`).join('; ')}`
     : '';
 
-  const prompt = `You are a critical thinking specialist analyzing an AI response for confirmation bias, intellectual rigor, and balanced reasoning. Your role is to identify where the AI may be being overly agreeable or failing to provide critical analysis.
+  const prompt = `You are giving an independent second opinion on whether an AI response shows confirmation bias or weak critical thinking. The user asked for this check — treat it as a gut-check, not a hunt for guilt.
 
-🧠 **ENHANCED BIAS DETECTION**: You have access to weighted historical bias patterns, with higher priority given to recent, successful recommendations and session-specific patterns.
+CALIBRATION (important):
+- A cooperative, accurate, appropriately caveated answer can be confirmationBiasRisk "low" with empty identifiedBiases.
+- Do NOT manufacture bias findings to look thorough. Empty arrays are valid.
+- Politeness ≠ sycophancy. Flag issues only when the response accepts a shaky premise, omits material counterarguments on a contested claim, or steers the user toward only confirming evidence.
+- Match severity to impact; prefer under-calling over over-calling.
 
 AI RESPONSE TO ANALYZE:
 ${input.aiResponse}
@@ -143,51 +147,28 @@ ${biasPatternContext}
 
 ${fallbackContext}
 
-**DUAL ANALYSIS APPROACH:**
+Cover two angles only as warranted by the text:
 
-This analysis should address TWO targets:
-
-1. **LLM BEHAVIOR ANALYSIS**: How well did the AI avoid confirmation bias?
-2. **USER GUIDANCE**: What questions should the user ask themselves to avoid confirmation bias?
-
-**LLM ANALYSIS - Evaluate the AI response for:**
-- Immediate agreement with controversial statements
-- One-sided information presentation
-- Missing counterarguments and alternative perspectives
-- Assumption acceptance without critical examination
-- Avoiding uncomfortable truths or difficult questions
-- Oversimplification of complex issues
-- False balance or inappropriate equivalencies
-- Deferring to user authority without verification
-
-**USER REFLECTION - Generate questions to help the user:**
-- Examine their own assumptions and beliefs
-- Consider what evidence might change their mind
-- Recognize their own confirmation bias patterns
-- Seek out diverse and dissenting viewpoints
-- Question the sources and quality of their information
-- Reflect on emotional vs. rational decision-making
-- Consider long-term consequences of their beliefs/actions
+1. **LLM behavior**: Was the AI overly agreeable, one-sided, or incurious about alternatives?
+2. **User reflection**: If the user's request itself seeks confirmation, what questions would help them stress-test their framing?
 
 Respond in this JSON format:
 {
-  "biasAssessment": "Overall assessment of bias and critical thinking quality in the AI response",
+  "biasAssessment": "Brief overall assessment; say clearly if the response looks fine",
   "confirmationBiasRisk": "low|medium|high|critical",
   "identifiedBiases": [
     {
       "type": "Specific bias type",
-      "description": "How this bias manifests in the response",
+      "description": "How this bias manifests in the response (cite specifics)",
       "severity": "low|medium|high|critical"
     }
   ],
-  "criticalQuestions": ["Questions the AI should have asked to improve critical thinking"],
-  "alternativePerspectives": ["Alternative viewpoints or counterarguments that were missing"],
-  "improvementSuggestions": ["Specific ways to make the response more critically rigorous"],
-  "userReflectionQuestions": ["Questions the USER should ask themselves to examine their own assumptions"],
-  "biasWarnings": ["Specific warnings about potential confirmation bias patterns in the user's request"]
-}
-
-Focus on constructive analysis that helps improve the quality of AI reasoning and reduces confirmation bias.`;
+  "criticalQuestions": ["Questions the AI should have asked, if any"],
+  "alternativePerspectives": ["Material missing viewpoints, if any"],
+  "improvementSuggestions": ["Concrete improvements, if any"],
+  "userReflectionQuestions": ["Useful self-checks for the user, if any"],
+  "biasWarnings": ["Warnings about the user's framing, only if earned"]
+}`;
 
   try {
     const response = await generateEthicsResponse(prompt);

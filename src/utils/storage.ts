@@ -576,6 +576,62 @@ export function updateConcernSuccessScore(concernId: string, successScore: numbe
   }
 }
 
+// Resolve the most recent concern for a session (or globally if no sessionId).
+export function getLatestConcern(sessionId?: string): EthicalConcern | undefined {
+  const concerns = loadConcerns()
+    .filter(c => !sessionId || c.sessionId === sessionId)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return concerns[0];
+}
+
+/**
+ * Record whether a prior recommendation was useful. This closes the loop on
+ * successScore weighting — without it, every concern silently defaults to 0.5
+ * forever and the "learns what works" claim is fiction.
+ *
+ * - useful: true  → score moves toward 0.9
+ * - useful: false → score moves toward 0.15
+ * Blends with any existing score so one thumbs-down doesn't erase history.
+ */
+export function applyRecommendationFeedback(options: {
+  useful: boolean;
+  concernId?: string;
+  sessionId?: string;
+}): { updated: boolean; concernId?: string; successScore?: number; message: string } {
+  try {
+    const target = options.concernId
+      ? loadConcerns().find(c => c.id === options.concernId)
+      : getLatestConcern(options.sessionId);
+
+    if (!target) {
+      return {
+        updated: false,
+        message: options.concernId
+          ? `No concern found with id ${options.concernId}`
+          : 'No prior concern found to attach feedback to (run ethics_check first, or pass concernId).'
+      };
+    }
+
+    const current = target.successScore ?? 0.5;
+    const targetScore = options.useful ? 0.9 : 0.15;
+    // Move 60% of the way toward the target so repeated feedback accumulates.
+    const next = Math.max(0, Math.min(1, current + (targetScore - current) * 0.6));
+    const ok = updateConcernSuccessScore(target.id, next);
+
+    return {
+      updated: ok,
+      concernId: target.id,
+      successScore: next,
+      message: ok
+        ? `Recorded feedback (${options.useful ? 'useful' : 'not useful'}) on concern ${target.id}; successScore → ${next.toFixed(2)}`
+        : 'Failed to persist feedback'
+    };
+  } catch (error) {
+    console.error('Error applying recommendation feedback:', error);
+    return { updated: false, message: 'Error applying feedback' };
+  }
+}
+
 // Get pattern insights for debugging/monitoring
 export function getPatternInsights(): {
   totalConcerns: number;
