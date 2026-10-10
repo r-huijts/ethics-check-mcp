@@ -1,10 +1,11 @@
 {
   "name": "@r-huijts/ethics-vibe-check",
-  "version": "1.1.0",
-  "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
+  "version": "1.2.0",
+  "description": "User-triggered MCP gut-check for bias, sycophancy, and conversation drift — with sessionTrend, swappable second-opinion models, and a companion Cursor skill.",
   "main": "build/index.js",
   "bin": {
-    "ethics-vibe-check": "build/index.js"
+    "ethics-vibe-check": "build/index.js",
+    "ethics-vibe-check-install-skill": "scripts/install-skill.js"
   },
   "type": "module",
   "scripts": {
@@ -14,25 +15,25 @@
     "test": "node test-ethics.js",
     "test:storage": "node storage-analysis.js",
     "test:session": "npm run build && node tests/session-trend.test.js",
-    "test:curl": "curl -X POST http://localhost:3000/test -H \"Content-Type: application/json\" -d '{\"test\": true}'",
-    "test:all": "npm run build && npm run test && npm run test:session",
+    "test:calibration": "npm run build && ETHICS_PROVIDER=mock node tests/calibration-eval.test.js",
+    "test:calibration:live": "npm run build && node tests/calibration-eval.test.js",
+    "test:all": "npm run build && npm run test:session && npm run test:calibration",
     "test:quick": "npm run build && echo 'Quick test: Build successful'",
+    "install-skill": "node scripts/install-skill.js",
     "prepublishOnly": "npm run build",
     "generate-deeplink": "node generate-cursor-link.js"
   },
   "keywords": [
     "ai-ethics",
-    "ethical-ai",
     "confirmation-bias",
-    "pattern-recognition",
+    "sycophancy",
     "mcp",
     "model-context-protocol",
     "claude",
     "cursor",
-    "ethics-oversight",
-    "bias-detection",
     "critical-thinking",
-    "automated-learning"
+    "bias-detection",
+    "ollama"
   ],
   "author": "r-huijts",
   "license": "MIT",
@@ -49,10 +50,14 @@
   },
   "files": [
     "build/",
+    "skills/",
+    "scripts/install-skill.js",
+    "evals/",
     "README.md",
     "USAGE.md",
     "LICENSE",
     "env.example",
+    "docs/system-prompts.md",
     "generate-cursor-link.js"
   ],
   "dependencies": {
@@ -64,4 +69,4 @@
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2"
   }
-} 
+}

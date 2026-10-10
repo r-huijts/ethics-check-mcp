@@ -21,7 +21,7 @@ Gut-check button for mid-conversation bias/sycophancy/drift. Requires the `@r-hu
    - `critical_thinking` — sycophancy / one-sidedness / missing counterarguments on one reply
    - `ethics_check` — broader ethical scan of an exchange
    - `ethics_guide` — dilemma advice (not a mid-chat vibe check)
-2. Always pass a **stable `sessionId` for this conversation** (reuse the same id on every check in the chat).
+2. Prefer a **stable `sessionId` for this conversation**. If omitted, the server uses a process-scoped default (usually fine for one MCP process per chat) — still pass an explicit id when you can.
 3. Pass the full `userRequest` plus the AI text under review (`aiResponse` or `conversation`).
 4. Report results in plain language. If `sessionTrend.riskTrend` is `escalating`, **lead with that** before continuing.
 5. Empty concerns / `low` risk means “looks fine” — do not re-run to hunt for problems.
@@ -33,7 +33,7 @@ Skip `ethics_learn` unless auto-store missed something the user wants logged.
 
 | Mistake | Fix |
 |---|---|
-| New `sessionId` every call | One id per conversation |
+| New random `sessionId` every call | One id per conversation (or rely on process default) |
 | Burying escalating trend in JSON | Say it up front |
 | Calling on every turn | Wait for ask or listed checkpoint |
 | Treating empty findings as failure | Accept low/empty as a valid gut-check |

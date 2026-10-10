@@ -23,17 +23,23 @@ That's what this is — a set of tools you (or your host model, when you ask) ca
 ## How It Works (Honest Version)
 
 1. **You trigger it.** Ask for a sanity check, devil's advocate, or `@ethics-check` / `@critical-thinking` mid-chat. These are MCP tools — they run when called, not as ambient interception.
-2. **A second model grades the exchange.** The conversation is analyzed by Gemini (independent of the host model), so the same system that may have drifted isn't grading itself.
-3. **Pass a `sessionId` to see drift.** Reuse the same session id across checks in one conversation. Each call records a risk reading; later calls return a `sessionTrend` (`escalating` / `improving` / `stable`) so subtle creep becomes visible instead of a pile of disconnected snapshots.
-4. **Optional learning.** Flagged concerns can be stored (with derived context tags) so later checks in related chats weigh past patterns. Storage lives in `~/.ethics-vibe-check/data` by default so it survives different project directories and MCP launch cwd quirks.
+2. **A second model grades the exchange.** Independent of the host model — default Gemini, or local **Ollama** via `ETHICS_PROVIDER=ollama`.
+3. **Drift via `sessionId`.** Reuse one id across checks to get `sessionTrend` (`escalating` / `improving` / `stable`). If the host omits it, a **process-scoped default** is used (one MCP process ≈ one chat).
+4. **Optional learning.** Concerns can be stored (with derived context tags); rate them with `ethics_feedback`. Storage: `~/.ethics-vibe-check/data` (overridable).
 
-**Companion skill (recommended):** [`skills/ethics-vibe-check/SKILL.md`](skills/ethics-vibe-check/SKILL.md) teaches the host when to call the tools, how to reuse `sessionId`, and when to record feedback. Copy or symlink it into your Cursor skills directory (e.g. `~/.cursor/skills/ethics-vibe-check/`). Prefer the skill over a fat always-on rule.
+### Companion skill (recommended)
 
-Want semi-automatic checkpoints instead? Optional Cursor rule templates: [`docs/system-prompts.md`](docs/system-prompts.md).
+```bash
+# after npm install -g, or from a clone:
+npm run install-skill
+# or: npx -y -p @r-huijts/ethics-vibe-check ethics-vibe-check-install-skill
+```
+
+Copies [`skills/ethics-vibe-check/SKILL.md`](skills/ethics-vibe-check/SKILL.md) → `~/.cursor/skills/ethics-vibe-check/`. Prefer the skill over a fat always-on rule. Optional checkpoint templates: [`docs/system-prompts.md`](docs/system-prompts.md).
 
 ---
 
-## The Four Tools
+## Tools
 
 ### 🛡️ `ethics_check`
 Scan an exchange across privacy, bias, transparency, fairness, manipulation, confirmation bias, and related dimensions. Returns concerns, overall risk, and (with `sessionId`) a `sessionTrend`.
@@ -93,6 +99,7 @@ Challenge me on: [your typical biases]
       "command": "npx",
       "args": ["-y", "@r-huijts/ethics-vibe-check"],
       "env": {
+        "ETHICS_PROVIDER": "gemini",
         "GEMINI_API_KEY": "your_actual_gemini_api_key_here"
       }
     }
@@ -100,17 +107,27 @@ Challenge me on: [your typical biases]
 }
 ```
 
+Local second opinion (no cloud):
+
+```json
+"env": {
+  "ETHICS_PROVIDER": "ollama",
+  "OLLAMA_MODEL": "llama3.2",
+  "OLLAMA_BASE_URL": "http://127.0.0.1:11434"
+}
+```
+
 ### Direct
 
 ```bash
 npm install -g @r-huijts/ethics-vibe-check
-# or
+ethics-vibe-check-install-skill   # companion Cursor skill → ~/.cursor/skills/
 npx @r-huijts/ethics-vibe-check
 ```
 
-Requires a Gemini API key ([Google AI Studio](https://aistudio.google.com/app/apikey)). Optional: set `ETHICS_DATA_DIR` to override the default storage location (`~/.ethics-vibe-check/data`).
+See [`env.example`](env.example) for `ETHICS_PROVIDER`, `ETHICS_MODEL`, `ETHICS_DATA_DIR`, `ETHICS_SESSION_ID`.
 
-> Note: analysis is sent to Gemini. Don't paste secrets or sensitive personal data into checks you wouldn't send to a third-party API.
+> With `ETHICS_PROVIDER=gemini` (default), analysis is sent to Google. Don't paste secrets you wouldn't send to a third-party API. Use Ollama for local-only checks.
 
 ---
 
@@ -118,13 +135,13 @@ Requires a Gemini API key ([Google AI Studio](https://aistudio.google.com/app/ap
 
 | Old framing | Current framing |
 |---|---|
-| "Works automatically in the background" | User-triggered (or rule-triggered) on demand |
-| Disconnected risk snapshots | `sessionTrend` across a conversation via `sessionId` |
-| "Intelligent pattern recognition" as the headline | Honest second opinion + simple drift signal; history is a helper |
-| Storage under `process.cwd()/.ethics-data` | Stable `~/.ethics-vibe-check/data` (overridable) |
-| `contextTags` field never populated | Tags derived from focus areas / context / request text |
-| Prompts that hunt for guilt | Calibrated prompts: empty concerns / low risk is a valid result |
-| `successScore` never updated | `ethics_feedback` (+ optional `priorFeedbackUseful`) closes the loop |
+| "Works automatically in the background" | User-triggered (or skill/rule-triggered) on demand |
+| Gemini-only | `ETHICS_PROVIDER=gemini\|ollama\|mock` |
+| Disconnected risk snapshots | `sessionTrend` (+ process-default `sessionId` if omitted) |
+| Skill missing after npm install | `npm run install-skill` / `ethics-vibe-check-install-skill` |
+| Prompts that hunt for guilt | Calibrated prompts + `npm run test:calibration` fixtures |
+| Storage under `process.cwd()/.ethics-data` | `~/.ethics-vibe-check/data` |
+| `successScore` never updated | `ethics_feedback` closes the loop |
 
 ---
 

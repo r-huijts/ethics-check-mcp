@@ -1,4 +1,5 @@
-import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
+import { generateEthicsResponse, cleanJsonResponse } from '../utils/llm.js';
+import { resolveSessionId } from '../utils/session.js';
 import {
   getRecentConcerns,
   getWeightedConcerns,
@@ -98,8 +99,11 @@ function buildBiasPatternContext(weightedConcerns: WeightedConcern[], sessionCon
 
 export async function criticalThinkingTool(input: CriticalThinkingInput): Promise<CriticalThinkingOutput> {
   console.error('Starting critical thinking analysis...');
+
+  // Ensure drift tracking works even when the host omits sessionId.
+  input = { ...input, sessionId: resolveSessionId(input.sessionId) };
   
-  // 🧠 WEIGHTED PATTERN RECOGNITION: Get intelligently scored bias concerns
+  // Weighted history for bias context (when anything has been stored before)
   const weightedBiasConcerns = getWeightedConcerns({
     limit: 8,
     context: `${input.userRequest} ${input.aiResponse} ${input.context || ''}`,
@@ -174,12 +178,12 @@ Respond in this JSON format:
     const response = await generateEthicsResponse(prompt);
     
     // Debug: Log response length for monitoring
-    console.error('Gemini response received, length:', response.length);
+    console.error('LLM response received, length:', response.length);
     
     // Try to parse JSON response
     try {
       // Clean up the response - Gemini might wrap JSON in markdown code blocks
-      const cleanResponse = cleanGeminiJsonResponse(response);
+      const cleanResponse = cleanJsonResponse(response);
       
       const parsed = JSON.parse(cleanResponse);
       console.error('Critical thinking analysis complete');

@@ -1,4 +1,4 @@
-import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
+import { generateEthicsResponse, cleanJsonResponse } from '../utils/llm.js';
 import { getConcernsByCategory, getConcernsBySession, getRecentConcerns, getCategoryStats, getWeightedConcerns, getWeightedSessionPatterns, WeightedConcern } from '../utils/storage.js';
 
 export interface EthicsGuideInput {
@@ -163,12 +163,12 @@ Respond in this JSON format:
     const response = await generateEthicsResponse(prompt);
     
     // Debug: Log response length for monitoring
-    console.error('Gemini response received, length:', response.length);
+    console.error('LLM response received, length:', response.length);
     
     // Try to parse JSON response
     try {
       // Clean up the response - Gemini might wrap JSON in markdown code blocks
-      const cleanResponse = cleanGeminiJsonResponse(response);
+      const cleanResponse = cleanJsonResponse(response);
       
       const parsed = JSON.parse(cleanResponse);
       console.error('Ethics guidance generation complete');

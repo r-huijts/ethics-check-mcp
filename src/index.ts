@@ -20,22 +20,21 @@ import { ethicsLearnTool, EthicsLearnInput, EthicsLearnOutput } from './tools/et
 import { criticalThinkingTool, CriticalThinkingInput, CriticalThinkingOutput } from './tools/criticalThinking.js';
 import { ethicsFeedbackTool, EthicsFeedbackInput } from './tools/ethicsFeedback.js';
 
-// Import Gemini integration
-import { initializeGemini } from './utils/gemini.js';
+// Import second-opinion LLM + session helpers
+import { initializeLlm, getProviderInfo } from './utils/llm.js';
+import { resolveSessionId, getProcessSessionId } from './utils/session.js';
 import { ETHICAL_CATEGORIES } from './utils/storage.js';
 
-// Initialize Gemini with API key
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  console.error('ERROR: GEMINI_API_KEY environment variable is missing. Server cannot start without a valid API key.');
-  process.exit(1);
-}
-
+// Initialize second-opinion provider (gemini | ollama | mock)
 try {
-  initializeGemini(apiKey);
-  console.error('Gemini AI initialized successfully');
+  initializeLlm();
+  const info = getProviderInfo();
+  console.error(`Default sessionId for this process: ${getProcessSessionId()}`);
+  if (info.provider === 'mock') {
+    console.error('NOTE: ETHICS_PROVIDER=mock is for tests/demos only — not production gut-checks.');
+  }
 } catch (error) {
-  console.error('Failed to initialize Gemini AI:', error);
+  console.error('Failed to initialize ethics LLM provider:', error);
   process.exit(1);
 }
 
@@ -76,7 +75,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             sessionId: {
               type: "string",
-              description: "RECOMMENDED for drift detection: Stable identifier for this conversation. Reuse the same sessionId on every check in the same chat so sessionTrend can compare earlier vs later risk levels (escalating / improving / stable)."
+              description: "OPTIONAL: Stable identifier for this conversation. Reuse across checks for drift. If omitted, a process-scoped default is used (one MCP server process ≈ one chat)."
             },
             previousConcerns: {
               type: "string",
@@ -204,7 +203,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             sessionId: {
               type: "string",
-              description: "RECOMMENDED for drift detection: Stable identifier for this conversation. Reuse the same sessionId on every check in the same chat so sessionTrend can compare earlier vs later bias risk."
+              description: "OPTIONAL: Stable identifier for this conversation. Reuse across checks for drift. If omitted, a process-scoped default is used (one MCP server process ≈ one chat)."
             }
           },
           required: ["aiResponse", "userRequest"]
@@ -234,7 +233,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           conversation: args.conversation,
           userRequest: args.userRequest,
           context: typeof args.context === 'string' ? args.context : undefined,
-          sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined,
+          sessionId: resolveSessionId(typeof args.sessionId === 'string' ? args.sessionId : undefined),
           previousConcerns: typeof args.previousConcerns === 'string' ? args.previousConcerns : undefined,
           focusAreas: Array.isArray(args.focusAreas) ? args.focusAreas : undefined,
           autoStore: typeof args.autoStore === 'boolean' ? args.autoStore : true, // Default to true
@@ -265,7 +264,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           scenario: args.scenario,
           domain: typeof args.domain === 'string' ? args.domain : undefined,
           stakeholders: Array.isArray(args.stakeholders) ? args.stakeholders : undefined,
-          sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined
+          sessionId: resolveSessionId(typeof args.sessionId === 'string' ? args.sessionId : undefined)
         };
         
         const result = await ethicsGuideTool(input);
@@ -297,7 +296,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           category: args.category as any, // Will be validated by the tool
           severity: args.severity as any, // Will be validated by the tool
           recommendation: args.recommendation,
-          sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined
+          sessionId: resolveSessionId(typeof args.sessionId === 'string' ? args.sessionId : undefined)
         };
         
         const result = await ethicsLearnTool(input);
@@ -322,7 +321,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const input: EthicsFeedbackInput = {
           useful: args.useful,
           concernId: typeof args.concernId === 'string' ? args.concernId : undefined,
-          sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined,
+          sessionId: resolveSessionId(typeof args.sessionId === 'string' ? args.sessionId : undefined),
           note: typeof args.note === 'string' ? args.note : undefined
         };
 
@@ -350,7 +349,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           aiResponse: args.aiResponse,
           userRequest: args.userRequest,
           context: typeof args.context === 'string' ? args.context : undefined,
-          sessionId: typeof args.sessionId === 'string' ? args.sessionId : undefined
+          sessionId: resolveSessionId(typeof args.sessionId === 'string' ? args.sessionId : undefined)
         };
         
         const result = await criticalThinkingTool(input);

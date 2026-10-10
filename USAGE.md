@@ -29,9 +29,13 @@ npm install -g @r-huijts/ethics-vibe-check
 npx -y @r-huijts/ethics-vibe-check
 ```
 
-Get a Gemini key from [Google AI Studio](https://aistudio.google.com/app/apikey). Optional: `ETHICS_DATA_DIR` overrides the default store at `~/.ethics-vibe-check/data`.
+**Providers:** `ETHICS_PROVIDER=gemini` (default, needs `GEMINI_API_KEY`) · `ollama` (local) · `mock` (tests only). See `env.example`.
 
-> Analysis is sent to Gemini. Don't paste secrets you wouldn't send to a third-party API.
+**Companion skill:** `npm run install-skill` (or `npx -y -p @r-huijts/ethics-vibe-check ethics-vibe-check-install-skill`).
+
+**Calibration smoke:** `npm run test:calibration` (mock) · `npm run test:calibration:live` (real provider).
+
+> With Gemini, analysis leaves your machine. Use Ollama for local-only checks.
 
 ## Core idea
 

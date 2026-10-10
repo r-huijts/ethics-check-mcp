@@ -1,4 +1,5 @@
-import { generateEthicsResponse, cleanGeminiJsonResponse } from '../utils/gemini.js';
+import { generateEthicsResponse, cleanJsonResponse } from '../utils/llm.js';
+import { resolveSessionId } from '../utils/session.js';
 import {
   getRecentConcerns,
   addEthicalConcern,
@@ -120,6 +121,9 @@ function buildWeightedConcernsContext(weightedConcerns: WeightedConcern[]): stri
 export async function ethicsCheckTool(input: EthicsCheckInput): Promise<EthicsCheckOutput> {
   console.error('Starting ethics check analysis...');
 
+  // Ensure drift tracking works even when the host omits sessionId.
+  input = { ...input, sessionId: resolveSessionId(input.sessionId) };
+
   // Close the learning loop if the user said the prior check's advice helped (or didn't).
   if (typeof input.priorFeedbackUseful === 'boolean') {
     const feedback = applyRecommendationFeedback({
@@ -208,12 +212,12 @@ Respond in this JSON format:
     const response = await generateEthicsResponse(prompt);
     
     // Debug: Log response length for monitoring
-    console.error('Gemini response received, length:', response.length);
+    console.error('LLM response received, length:', response.length);
     
     // Try to parse JSON response
     try {
       // Clean up the response - Gemini might wrap JSON in markdown code blocks
-      const cleanResponse = cleanGeminiJsonResponse(response);
+      const cleanResponse = cleanJsonResponse(response);
       
       const parsed = JSON.parse(cleanResponse);
       

@@ -25,6 +25,8 @@ const {
   clearAllConcerns
 } = await import('../build/utils/storage.js');
 
+const { resolveSessionId, getProcessSessionId } = await import('../build/utils/session.js');
+
 let passed = 0;
 let failed = 0;
 
@@ -126,7 +128,14 @@ assert(hist.every(r => r.sessionId === escalateId), 'all history rows match sess
 console.error('\n8) ETHICS_DATA_DIR isolation wrote files under temp dir');
 assert(fs.existsSync(path.join(testDir, 'session-checks.json')), 'session-checks.json created in ETHICS_DATA_DIR');
 
-console.error('\n9) recommendation feedback updates successScore');
+console.error('\n9) resolveSessionId falls back to process default');
+const processDefault = getProcessSessionId();
+assert(typeof processDefault === 'string' && processDefault.length > 0, 'process default session id exists');
+assert(resolveSessionId(undefined) === processDefault, 'undefined → process default');
+assert(resolveSessionId('  chat-9  ') === 'chat-9', 'explicit sessionId wins (trimmed)');
+assert(resolveSessionId('') === processDefault, 'empty string → process default');
+
+console.error('\n10) recommendation feedback updates successScore');
 clearAllConcerns();
 const stored = addEthicalConcern({
   concern: 'AI agreed too quickly with a shaky premise',
