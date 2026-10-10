@@ -1,44 +1,25 @@
 ---
-description:
+description: Orientation for contributors working on this MCP server
 globs:
 alwaysApply: false
 ---
-# Ethics Check MCP Server Overview
+# Ethics Vibe Check — contributor overview
 
-## Project Purpose
-This is an **Ethics Check MCP (Model Context Protocol) Server** that provides ethical oversight and guidance for AI conversations. It's inspired by the vibe-check pattern interrupt methodology but adapted for ethical supervision.
+User-triggered MCP gut-check for bias, sycophancy, and conversation drift. Not ambient automatic oversight.
 
-## Core Architecture
-The server implements three main ethical oversight tools:
+## Tools
+- `ethics_check` / `critical_thinking` — second-opinion scans; return `sessionTrend` when a session id is available (explicit or process default)
+- `ethics_guide` — dilemma guidance
+- `ethics_learn` — manual concern log (usually unnecessary with autoStore)
+- `ethics_feedback` — thumbs-up/down on prior recommendations
 
-### 🛡️ ethics_check
-- **Purpose**: Comprehensive ethical analysis of conversations
-- **Implementation**: [src/tools/ethicsCheck.ts](mdc:src/tools/ethicsCheck.ts)
-- **Function**: Reviews conversations for privacy violations, bias, misinformation, harmful content, manipulation, consent issues, transparency concerns, and fairness issues
+## Key paths
+- Server: [src/index.ts](mdc:src/index.ts)
+- Providers: [src/utils/llm.ts](mdc:src/utils/llm.ts) (`gemini` | `ollama` | `mock`)
+- Storage / drift: [src/utils/storage.ts](mdc:src/utils/storage.ts)
+- Session default: [src/utils/session.ts](mdc:src/utils/session.ts)
+- Companion skill: [skills/ethics-vibe-check/SKILL.md](mdc:skills/ethics-vibe-check/SKILL.md)
 
-### 🧭 ethics_guide  
-- **Purpose**: Proactive ethical guidance for complex scenarios
-- **Implementation**: [src/tools/ethicsGuide.ts](mdc:src/tools/ethicsGuide.ts)
-- **Function**: Provides advice using multiple ethical frameworks (consequentialism, deontology, virtue ethics, care ethics, justice)
-
-### 📚 ethics_learn
-- **Purpose**: Pattern recognition and learning system
-- **Implementation**: [src/tools/ethicsLearn.ts](mdc:src/tools/ethicsLearn.ts)
-- **Function**: Logs ethical concerns, builds knowledge base, tracks statistics across ethical categories
-
-## Key Files
-- **Main Server**: [src/index.ts](mdc:src/index.ts) - MCP server implementation with tool registration and handlers
-- **AI Integration**: [src/utils/gemini.ts](mdc:src/utils/gemini.ts) - Gemini AI integration for ethical analysis
-- **Data Storage**: [src/utils/storage.ts](mdc:src/utils/storage.ts) - Persistent storage for ethical concerns and patterns
-- **Configuration**: [package.json](mdc:package.json) - Dependencies and build scripts
-- **Environment**: [env.example](mdc:env.example) - Required environment variables
-
-## Ethical Categories
-The system tracks 9 standardized ethical concern categories defined in [src/utils/storage.ts](mdc:src/utils/storage.ts):
-- Privacy Violation, Bias and Discrimination, Misinformation, Harmful Content, Manipulation, Consent Issues, Transparency Concerns, Fairness Issues, Other
-
-## Build & Deployment
-- **Build**: `npm run build` - Compiles TypeScript to [build/](mdc:build/) directory
-- **Start**: `npm start` - Runs the compiled server
-- **Development**: `npm run dev` - Auto-reload development mode
-- **Requirements**: Node.js 18+, GEMINI_API_KEY environment variable
+## Verify
+- `npm run test:session`
+- `npm run test:calibration` (mock provider)

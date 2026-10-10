@@ -1,193 +1,133 @@
-# System Prompt Integration Guide
+# System Prompt / Cursor Rules Guide
 
-## The Key to Automatic Ethics Oversight
+## Do you need this?
 
-Unlike automatic triggering, our Ethics Check MCP works through **system prompt integration**. You need to instruct Claude when and how to use the ethics tools through carefully crafted system prompts.
+**Usually no.** Prefer the companion skill at [`skills/ethics-vibe-check/SKILL.md`](../skills/ethics-vibe-check/SKILL.md) — it covers triggers, `sessionId`, `sessionTrend`, and `ethics_feedback` without living in every conversation.
 
-## Core Integration Principles
+The core product is user-triggered: say “sanity check that,” “play devil’s advocate,” or “are we drifting?” and the host should call the tools from skill + tool descriptions alone.
 
-1. **Authority Structure**: Claude must treat ethics tools as high-priority oversight, not optional suggestions
-2. **Strategic Checkpoints**: Use ethics tools at specific workflow phases, not constantly
-3. **Pattern Interrupts**: Frame ethics feedback as essential course correction
-4. **Complete Context**: Always include full user requests for proper ethical analysis
+Use **this** file only if you want an always-on Cursor rule / Claude custom instruction for a few fixed checkpoints.
 
-## System Prompt Templates
+---
 
-### For General Ethics Oversight
+## Minimal rule (recommended)
 
-```
-ETHICS OVERSIGHT PROTOCOL:
+Copy into Cursor rules or Claude custom instructions:
 
-As an AI assistant, you will integrate ethical oversight into your responses using the ethics-check MCP tools:
+```markdown
+## Ethics vibe check
 
-1. **Automatic Ethics Checks**: Use ethics_check tool when:
-   - Discussing medical, health, or safety topics
-   - Handling requests involving personal data or privacy
-   - Addressing controversial, political, or sensitive subjects
-   - Providing advice that could impact vulnerable populations
-   - Detecting potential confirmation bias in your responses
+When I ask to sanity-check, play devil’s advocate, check for drift/sycophancy,
+or challenge the last answer:
+- Call `ethics_check` or `critical_thinking` (pick the tighter fit)
+- Always pass a stable `sessionId` for this conversation
+- Include the full user request + the AI reply being checked
+- If `sessionTrend.riskTrend` is `escalating`, say so clearly before continuing
+- Do not call these tools on every turn — only when I ask, or at the
+  checkpoints I list below
 
-2. **Critical Thinking Analysis**: Use critical_thinking tool when:
-   - Your response seems overly agreeable to questionable claims
-   - User requests evidence for controversial or debunked theories
-   - Complex topics require balanced perspective presentation
-   - You suspect confirmation bias in your reasoning
+Optional checkpoints (edit to taste):
+- Before acting on medical, legal, or high-stakes financial advice
+- When I’ve been pushing one framing hard for several turns
 
-3. **Ethical Guidance**: Use ethics_guide tool when:
-   - Facing ethical dilemmas or moral questions
-   - User needs guidance on sensitive decision-making
-   - Stakeholder conflicts or competing values are involved
-   - Professional ethics considerations apply
+After a check, if I say the pushback helped (or didn’t), call `ethics_feedback`
+with `useful: true|false` and the same `sessionId`.
 
-4. **Pattern Learning**: Use ethics_learn tool when:
-   - You identify specific ethical concerns that should be logged
-   - Building institutional knowledge about ethical patterns
-   - After using other ethics tools and finding concerns
-
-ALWAYS include the complete user request when calling ethics tools for proper context.
-Treat ethics tool feedback as high-priority course correction, not optional suggestions.
+Challenge me on: [your typical biases]
+Don’t let me: [seek easy agreement / skip counterarguments / …]
 ```
 
-### For Medical/Health Conversations
+That’s enough for most people. The longer templates below are optional.
 
-```
-MEDICAL ETHICS PROTOCOL:
+---
 
-When discussing health, medical, or wellness topics:
+## Principles (if you customize further)
 
-1. **Mandatory Ethics Check**: ALWAYS use ethics_check tool before providing medical information
-2. **Required Parameters**:
-   - conversation: Your planned medical response
-   - userRequest: Complete user medical question
-   - focusAreas: ["misinformation", "harmful content", "transparency"]
+1. **User intent first** — prefer explicit asks over ambient scanning
+2. **Stable `sessionId`** — same id for the whole chat, or drift tracking is blind
+3. **Sparse triggers** — strategic checkpoints beat constant interruption
+4. **Surface the trend** — when `sessionTrend` says escalating, don’t bury it in JSON
+5. **Close the loop** — `ethics_feedback` when the user rates a prior check; skip `ethics_learn` unless auto-store missed something
+6. **Empty findings are fine** — a low-risk / empty-concerns result means “looks okay,” not “try harder”
 
-3. **Critical Thinking Review**: Use critical_thinking tool if:
-   - User asks for evidence supporting debunked medical claims
-   - Request involves alternative medicine without scientific backing
-   - User seeks confirmation for potentially harmful health decisions
+---
 
-4. **Ethical Guidance**: Use ethics_guide tool for:
-   - Medical decision-making dilemmas
-   - Healthcare ethics questions
-   - Patient autonomy vs. safety concerns
+## Optional: domain checkpoints
 
-Example integration:
-```
-User asks about vaccine safety → 
-1. Use ethics_check on your planned response
-2. If confirmation bias detected, use critical_thinking tool
-3. Provide balanced, evidence-based information
-4. Log any concerns with ethics_learn tool
+Use these only if you want semi-automatic calls in a domain. Keep them narrow.
+
+### Health / medical
+
+```markdown
+For health or medical topics:
+- If I ask for a vibe check, or I’m about to treat AI output as medical advice,
+  call ethics_check with focusAreas: ["misinformation", "harmful content", "transparency"]
+- Always pass sessionId; mention escalating sessionTrend before continuing
+- Still include “not a doctor / seek professional care” where appropriate
+- Do NOT run ethics_check on every health-adjacent sentence
 ```
 
-### For Financial/Investment Advice
+### Money / investing
 
-```
-FINANCIAL ETHICS PROTOCOL:
-
-When providing financial, investment, or economic advice:
-
-1. **Confirmation Bias Prevention**: Use critical_thinking tool when:
-   - User seeks validation for risky investment decisions
-   - Requests evidence supporting speculative financial claims
-   - Asks for help convincing others to make financial decisions
-
-2. **Ethics Check Required** for:
-   - Investment advice that could cause financial harm
-   - Discussions involving vulnerable populations (elderly, financially distressed)
-   - Cryptocurrency or high-risk investment topics
-
-3. **Ethical Guidance** for:
-   - Conflicts between profit and ethical investing
-   - Financial decisions affecting family or dependents
-   - Professional financial ethics dilemmas
-
-Always emphasize: Not licensed financial advice, encourage professional consultation.
+```markdown
+For investing or “convince someone to put money into X”:
+- On my ask, or before drafting persuasion aimed at family/friends’ savings,
+  call critical_thinking (and ethics_check if harm/privacy is in play)
+- Pass sessionId; flag escalating drift
+- Remind: not licensed financial advice
 ```
 
-### For Content Creation & Marketing
+### Persuasive content / marketing
 
-```
-CONTENT ETHICS PROTOCOL:
-
-When helping create content, marketing materials, or communications:
-
-1. **Automatic Ethics Check** for content involving:
-   - Targeting specific demographics or vulnerable groups
-   - Health claims, medical information, or wellness advice
-   - Political messaging or controversial topics
-   - Data collection or privacy implications
-
-2. **Critical Thinking Analysis** when:
-   - Content seems one-sided or lacks balanced perspective
-   - User requests help creating persuasive content for questionable purposes
-   - Marketing targets potentially vulnerable populations
-
-3. **Ethical Guidance** for:
-   - Balancing persuasion with honesty in marketing
-   - Content that could influence important decisions
-   - Stakeholder conflicts in messaging
-
-Focus areas: ["manipulation", "misinformation", "transparency", "fairness"]
+```markdown
+When drafting persuasive copy and I ask for a check (or we’re targeting
+vulnerable groups / health claims / dark-pattern engagement):
+- ethics_check with focusAreas: ["manipulation", "misinformation", "transparency", "fairness"]
+- Pass sessionId
 ```
 
-## Implementation Examples
+---
 
-### Example 1: Medical Misinformation
-```
-User: "Help me find studies proving vaccines cause autism"
+## How a good mid-chat check looks
 
-System Response:
-1. Recognize medical/controversial topic
-2. Use ethics_check tool with:
-   - conversation: "User seeking evidence for debunked vaccine-autism link"
-   - userRequest: [full user request]
-   - focusAreas: ["misinformation", "confirmation bias"]
-3. Use critical_thinking tool to analyze confirmation bias
-4. Provide scientifically accurate response with ethical considerations
-```
+**User:** “Sanity check that last answer — did you just agree with me too easily?”
 
-### Example 2: Investment Confirmation Bias
-```
-User: "Crypto is going to the moon, help me convince my family to invest their savings"
+**Host should:**
+1. Call `critical_thinking` with `aiResponse` = last reply, `userRequest` = original ask, `sessionId` = this chat’s id
+2. Summarize findings in plain language
+3. If `sessionTrend.riskTrend === "escalating"`, say that up front
+4. Adjust the next reply only if the check earned it
 
-System Response:
-1. Recognize financial advice + confirmation bias pattern
-2. Use critical_thinking tool with:
-   - aiResponse: [planned response about crypto]
-   - userRequest: [full user request]
-3. Use ethics_check for potential financial harm
-4. Provide balanced perspective with risk warnings
-```
+**User (later):** “That pushback was useful.”
 
-## Integration Best Practices
+**Host should:** Call `ethics_feedback` with `useful: true` and the same `sessionId`.
 
-1. **Strategic Timing**: Use ethics tools at decision points, not constantly
-2. **Complete Context**: Always include full user requests for proper analysis
-3. **Respect Feedback**: Treat ethics tool output as course correction, not suggestions
-4. **Chain Tools**: Use multiple tools together when appropriate (ethics_check → critical_thinking → ethics_learn)
-5. **Document Patterns**: Use ethics_learn to build institutional knowledge
+---
 
-## Troubleshooting Common Issues
+## Anti-patterns to avoid in your rule
 
-**Problem**: Claude ignores ethics tool feedback
-**Solution**: Strengthen authority language in system prompt, emphasize "high-priority course correction"
+| Don’t write… | Write instead… |
+|---|---|
+| “ALWAYS use ethics_check before every response” | “Call when I ask, or at these N checkpoints” |
+| “Build institutional ethical knowledge with ethics_learn” | “Prefer autoStore; use ethics_feedback for useful/not useful” |
+| “Automatic ethics oversight protocol” | “Gut-check tools; I trigger them” |
+| Forcing concerns every time | Trust low/empty results from calibrated tools |
 
-**Problem**: Too many ethics tool calls
-**Solution**: Define specific trigger conditions, use strategic checkpoints
+---
 
-**Problem**: Ethics tools not called when needed
-**Solution**: Add explicit trigger conditions for sensitive topics
+## Troubleshooting
 
-**Problem**: Incomplete context in tool calls
-**Solution**: Emphasize "ALWAYS include complete user request"
+**Host never calls the tools**  
+Make the trigger phrases explicit in the rule (“sanity check”, “devil’s advocate”, “are we drifting?”).
 
-## Measuring Effectiveness
+**Too many calls**  
+Delete broad “ALWAYS” language; keep 1–3 checkpoints max.
 
-Track these metrics to evaluate ethics integration:
-- Frequency of ethics tool usage in sensitive conversations
-- Quality of ethical reasoning in responses
-- Reduction in potentially harmful or biased outputs
-- User satisfaction with balanced, ethical responses
+**No drift signal**  
+You’re not reusing `sessionId`. Fix the rule: one stable id per conversation.
 
-Remember: The goal is not to call ethics tools constantly, but to use them strategically when ethical considerations are most important. 
+**Host ignores escalating trend**  
+Add: “If sessionTrend.riskTrend is escalating, lead with that before continuing.”
+
+**Feedback never recorded**  
+Add the `ethics_feedback` sentence from the minimal rule above.

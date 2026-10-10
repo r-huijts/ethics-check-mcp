@@ -1,10 +1,11 @@
 {
   "name": "@r-huijts/ethics-vibe-check",
-  "version": "1.0.2",
-  "description": "🛡️ Make AI interrupt itself and challenge your thinking. Turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.",
+  "version": "1.2.0",
+  "description": "User-triggered MCP gut-check for bias, sycophancy, and conversation drift — with sessionTrend, swappable second-opinion models, and a companion Cursor skill.",
   "main": "build/index.js",
   "bin": {
-    "ethics-vibe-check": "build/index.js"
+    "ethics-vibe-check": "build/index.js",
+    "ethics-vibe-check-install-skill": "scripts/install-skill.js"
   },
   "type": "module",
   "scripts": {
@@ -13,45 +14,50 @@
     "start": "node build/index.js",
     "test": "node test-ethics.js",
     "test:storage": "node storage-analysis.js",
-    "test:curl": "curl -X POST http://localhost:3000/test -H \"Content-Type: application/json\" -d '{\"test\": true}'",
-    "test:all": "npm run build && npm run test && npm run test:storage",
+    "test:session": "npm run build && node tests/session-trend.test.js",
+    "test:calibration": "npm run build && ETHICS_PROVIDER=mock node tests/calibration-eval.test.js",
+    "test:calibration:live": "npm run build && node tests/calibration-eval.test.js",
+    "test:all": "npm run build && npm run test:session && npm run test:calibration",
     "test:quick": "npm run build && echo 'Quick test: Build successful'",
+    "install-skill": "node scripts/install-skill.js",
     "prepublishOnly": "npm run build",
     "generate-deeplink": "node generate-cursor-link.js"
   },
   "keywords": [
     "ai-ethics",
-    "ethical-ai",
     "confirmation-bias",
-    "pattern-recognition",
+    "sycophancy",
     "mcp",
     "model-context-protocol",
     "claude",
     "cursor",
-    "ethics-oversight",
-    "bias-detection",
     "critical-thinking",
-    "automated-learning"
+    "bias-detection",
+    "ollama"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "author": "r-huijts",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ethics-check-mcp.git"
+    "url": "https://github.com/r-huijts/ethics-check-mcp.git"
   },
-  "homepage": "https://github.com/yourusername/ethics-check-mcp#readme",
+  "homepage": "https://github.com/r-huijts/ethics-check-mcp#readme",
   "bugs": {
-    "url": "https://github.com/yourusername/ethics-check-mcp/issues"
+    "url": "https://github.com/r-huijts/ethics-check-mcp/issues"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "files": [
     "build/",
+    "skills/",
+    "scripts/install-skill.js",
+    "evals/",
     "README.md",
     "USAGE.md",
     "LICENSE",
     "env.example",
+    "docs/system-prompts.md",
     "generate-cursor-link.js"
   ],
   "dependencies": {
@@ -63,4 +69,4 @@
     "@types/node": "^22.10.2",
     "typescript": "^5.7.2"
   }
-} 
+}

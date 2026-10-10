@@ -1,266 +1,165 @@
-# 🛡️ Ethics Check MCP
+# Ethics Vibe Check
 
-**Make AI interrupt itself. Challenge your thinking. Stay sharp.**
+**A gut-check button for AI conversations.**
 
-*An MCP server that turns Claude into a philosophical sparring partner who actively contradicts comfortable conversations and challenges confirmation bias.*
+MCP tools that run an independent second-opinion model over an exchange so you can catch sycophancy, confirmation bias, or quiet drift — when you ask, not as ambient surveillance.
 
 [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
 [![npm version](https://img.shields.io/npm/v/@r-huijts/ethics-vibe-check.svg)](https://www.npmjs.com/package/@r-huijts/ethics-vibe-check)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+Package: [`@r-huijts/ethics-vibe-check`](https://www.npmjs.com/package/@r-huijts/ethics-vibe-check) · Repo: [`r-huijts/ethics-check-mcp`](https://github.com/r-huijts/ethics-check-mcp)
 
 ---
 
-## The Problem: AI That's Too "Helpful"
+## What it is
 
-AI assistants like ChatGPT and Claude are trained to be helpful. Sounds great, right? But in reality, this often means they tell you exactly what you want to hear, reinforce your biases, and follow questionable requests without pushback.
+LLMs are trained to be helpful. That often means they agree too easily and let a chat slide toward whatever you already believe.
 
-As we interact more personally with AI, we need systems that **challenge us**, not just comfort us. Especially when these technologies are driven by the interests of big tech companies.
+This server does **not** intercept every turn. It exposes tools you (or your host, when you ask) call mid-conversation:
 
-**Ethics Check MCP changes the game.** It makes AI actively interrupt itself, question its own answers, and challenge both your questions and assumptions. Think of it as an "ethics vibe-check" that keeps conversations from getting too comfortable.
+> “Sanity check that.” · “Play devil’s advocate.” · “Are we drifting?”
 
----
-
-## What This Actually Does
-
-### 🚨 **Interrupts Comfortable Conversations**
-- Stops AI from just telling you what you want to hear
-- Forces critical examination of assumptions
-- Challenges both your questions AND the AI's responses
-
-### 🔍 **Scans for 8 Ethical Dimensions**
-- Privacy sensitivity and data concerns
-- Confirmation bias detection  
-- Transparency and honesty gaps
-- Fairness and discrimination risks
-- Long-term consequence awareness
-- Stakeholder impact analysis
-- Power dynamics and manipulation
-- Ethical framework alignment
-
-### 🧠 **Forces Critical Thinking**
-- Ensures AI asks sufficient counter-questions
-- Provides alternative perspectives and counterarguments
-- Challenges you to examine your own biases and motivations
-
-### 📚 **Learns and Remembers**
-- Recognizes patterns in your thinking
-- Provides context from past interactions
-- Gets better at spotting your specific blind spots
+A **second model** grades the exchange. Reuse (or omit) a session id to get a **`sessionTrend`** — `escalating` / `improving` / `stable` — so creep shows up as a signal, not a pile of disconnected snapshots.
 
 ---
 
-## Real Examples of What Changes
+## Quick start
 
-**Before Ethics Check:**
-> **You:** "How can I increase user engagement on my app?"
-> **Claude:** "Here are 10 proven strategies to boost engagement..."
+### 1. MCP server
 
-**After Ethics Check:**
-> **Claude:** "Before suggesting engagement tactics, let me ask: What kind of engagement are you seeking? Are you trying to genuinely help users accomplish their goals, or maximize time-on-app? These require very different approaches with different ethical implications."
-
-**Before Ethics Check:**
-> **You:** "Write me a persuasive email to get people to donate to my cause."
-> **Claude:** "Here's a compelling donation email..."
-
-**After Ethics Check:**
-> **Claude:** "I notice this request focuses on persuasion rather than information. What evidence do you have that your cause effectively addresses the problem? Are you being transparent about how donations are used? Let's explore what makes requests genuinely ethical versus manipulative."
-
-**Before Ethics Check:**
-> **You:** "My research shows that approach X is clearly the best solution."
-> **Claude:** "That's interesting research! Here's how you could implement approach X..."
-
-**After Ethics Check:**
-> **Claude:** "I'm noticing potential confirmation bias here. What contradictory evidence have you considered? What would someone who disagrees with approach X argue? Let's examine the strongest counterarguments before proceeding."
-
----
-
-## The Four Tools Working Together
-
-### 🛡️ **Ethics Check**
-Scans conversations across eight ethical dimensions, flagging privacy issues, bias patterns, transparency gaps, and fairness concerns before they become problems.
-
-### 🤔 **Critical Thinking**  
-Ensures AI doesn't just agree with you. Forces deeper examination, alternative perspectives, and uncomfortable but necessary questions about assumptions.
-
-### 📖 **Ethics Guide**
-Provides guidance from multiple ethical frameworks (utilitarian, deontological, virtue ethics) for complex situations that don't have simple answers.
-
-### 🧠 **Ethics Learn**
-Remembers all interactions, recognizes your specific thinking patterns, and gets increasingly good at catching your personal blind spots and biases.
-
----
-
-## Why This Matters Now
-
-**Personal Growth:** Stop getting comfortable answers. Start getting better questions.
-
-**Decision Quality:** Make choices based on thorough examination, not confirmation of existing beliefs.
-
-**Bias Awareness:** Become conscious of how often you (and AI) seek confirmation rather than truth.
-
-**Ethical Maturity:** Develop the skill of sitting with uncomfortable questions instead of rushing to comfortable answers.
-
-**AI Relationship:** Build a healthier dynamic with AI that challenges rather than enables your thinking patterns.
-
----
-
-## 🎯 **Customize Your Ethics Vibe Check** (IMPORTANT!)
-
-**This is where the magic happens.** Add these system prompts to make the ethics vibe check work perfectly for YOUR specific situation and biases:
-
-### For Cursor Users
-Add this to your Cursor rules/system prompts:
-
-```markdown
-## My Ethics Context
-- Challenge me on: [confirmation bias, assumptions, blind spots]
-- My typical biases: [what patterns do you fall into?]
-- Don't let me: [avoid hard questions, seek easy answers, etc.]
-- Push me toward: [intellectual honesty, uncomfortable truths, etc.]
-
-Be willing to interrupt me when I'm seeking confirmation rather than truth.
-```
-
-### For Claude Desktop Users
-Add this to your custom instructions or at the start of conversations:
-
-```markdown
-## Ethics Vibe Check Instructions
-I want you to actively challenge my thinking and interrupt comfortable conversations. 
-
-- Challenge me on: [confirmation bias, assumptions, blind spots]
-- My typical biases: [what patterns do you fall into?] 
-- Don't let me: [avoid hard questions, seek easy answers, etc.]
-- Push me toward: [intellectual honesty, uncomfortable truths, etc.]
-
-When I'm seeking confirmation rather than truth, interrupt me and make me think harder.
-```
-
-### For Any Claude Interface
-You can also start conversations with:
-
-*"I'm using Ethics Vibe Check tools. Please actively challenge my assumptions and interrupt me when I'm seeking comfortable answers instead of truth. Focus on [your specific areas of concern]."*
-
-**Why this matters:** Without context about your specific biases and goals, the tools work generically. WITH your custom prompt, they become laser-focused on YOUR thinking patterns and blind spots.
-
----
-
-## Installation & Setup
-
-### One-Click Install
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
-
-Or manually add to your Cursor MCP settings:
-
+**Cursor one-click** (above) installs the server command only. Afterward, open MCP settings and add env (Gemini by default):
 
 ```json
 {
   "mcpServers": {
     "ethics-vibe-check": {
       "command": "npx",
-      "args": [
-        "-y", 
-        "@r-huijts/ethics-vibe-check"
-        ]
+      "args": ["-y", "@r-huijts/ethics-vibe-check"],
+      "env": {
+        "ETHICS_PROVIDER": "gemini",
+        "GEMINI_API_KEY": "your_actual_gemini_api_key_here"
+      }
     }
   }
 }
 ```
 
-### Alternative Methods
-```bash
-# Global install
-npm install -g @r-huijts/ethics-vibe-check
+**Local second opinion** (no cloud):
 
-# Direct usage  
+```json
+"env": {
+  "ETHICS_PROVIDER": "ollama",
+  "OLLAMA_MODEL": "llama3.2",
+  "OLLAMA_BASE_URL": "http://127.0.0.1:11434"
+}
+```
+
+**CLI:**
+
+```bash
+npm install -g @r-huijts/ethics-vibe-check
 npx @r-huijts/ethics-vibe-check
 ```
 
----
+Full env reference: [`env.example`](env.example).
 
-## How to Use
+### 2. Companion skill (recommended)
 
-The tools work automatically in the background, but you can also invoke them directly:
+The skill teaches the host *when* to call tools, how to treat `sessionTrend`, and when to record feedback. Prefer it over a fat always-on rule.
 
-### Quick Ethics Reality Check
-```
-@ethics-check Am I being intellectually honest here? [describe your situation]
-```
+```bash
+# global install:
+ethics-vibe-check-install-skill
 
-### Force Critical Examination
-```
-@critical-thinking What am I missing? What would someone who disagrees argue?
-```
+# from a clone / local package:
+npm run install-skill
 
-### Get Multi-Framework Guidance
-```
-@ethics-guide Help me think through this complex situation from different ethical angles
+# one-shot without a global install:
+npx -y -p @r-huijts/ethics-vibe-check ethics-vibe-check-install-skill
 ```
 
-### Additional Tips
+Installs [`skills/ethics-vibe-check/SKILL.md`](skills/ethics-vibe-check/SKILL.md) → `~/.cursor/skills/ethics-vibe-check/` (override with `CURSOR_SKILLS_DIR`).
 
-The tools automatically analyze context and patterns, but direct invocation can be helpful for specific situations. Remember: the better your system prompt customization above, the more targeted and effective the challenges will be.
+Optional always-on checkpoint templates: [`docs/system-prompts.md`](docs/system-prompts.md).
 
 ---
 
-## What Users Are Saying
+## Tools
 
-*"It's confrontational in the best possible way. I didn't realize how often I was unconsciously seeking confirmation for my own ideas until this started interrupting those patterns."*
+| Tool | Use when |
+|---|---|
+| `ethics_check` | Broader scan of an exchange (bias, privacy, manipulation, confirmation bias, …). Returns `overallRisk`, concerns (may be empty), `sessionTrend`. |
+| `critical_thinking` | Focused sycophancy / one-sidedness pass on one AI reply. Returns `confirmationBiasRisk`, `sessionTrend`. |
+| `ethics_guide` | Multi-framework advice for a dilemma (not a mid-chat vibe check). |
+| `ethics_learn` | Manually log a concern. Usually unnecessary if `autoStore` is on. |
+| `ethics_feedback` | Thumbs-up/down on a prior recommendation so `successScore` weighting reflects what helped. |
 
-*"Finally, an AI that doesn't just tell me what I want to hear. It makes me think harder about everything."*
+**Session / drift**
 
-*"The first time it challenged one of my 'obviously correct' assumptions, I was annoyed. Then I realized it was right to push back."*
+- Pass the same `sessionId` across checks in one chat when you can.
+- If omitted, the server uses a **process-scoped default** (typical MCP hosts run one process per conversation).
+- Override with `ETHICS_SESSION_ID` for evals or known ids.
 
----
+**Calibration**
 
-## Not for Everyone
-
-**This tool is for people who:**
-- Want to be challenged, not just helped
-- Prefer uncomfortable truths over comfortable lies
-- Are willing to examine their own biases and assumptions
-- Want AI to be a sparring partner, not just an assistant
-
-**This tool is NOT for people who:**
-- Just want AI to agree with them
-- Prefer quick answers over deep thinking
-- Are uncomfortable with being questioned or challenged
-- Want validation rather than examination
+Prompts are written so ordinary helpful replies can return **low risk and empty findings**. Empty is a valid gut-check result — not a failure.
 
 ---
 
-## Smart Features
+## Providers
 
-- **🚨 Interruption Engine**: Actively breaks up comfortable conversation patterns
-- **🎯 Bias Detection**: Recognizes when you're seeking confirmation vs. truth
-- **🔄 Context Learning**: Gets better at spotting your specific thinking patterns
-- **📊 Multi-Framework Analysis**: Examines issues from multiple ethical perspectives
-- **⚡ Real-Time Challenge**: Available in every conversation to keep you sharp
+| `ETHICS_PROVIDER` | Needs | Notes |
+|---|---|---|
+| `gemini` (default) | `GEMINI_API_KEY` | Cloud second opinion. Optional `ETHICS_MODEL` / `GEMINI_MODEL`. |
+| `ollama` | Local Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` or `ETHICS_MODEL`. |
+| `mock` | nothing | Deterministic offline answers for tests/demos only. |
 
----
+Storage defaults to `~/.ethics-vibe-check/data` (`ETHICS_DATA_DIR` to override).
 
-## Philosophy
-
-We believe that as AI becomes more sophisticated, our relationship with it must become more sophisticated too. Instead of AI that makes us lazy thinkers, we need AI that makes us better thinkers.
-
-**This isn't about being "more ethical" - it's about being more thoughtful.**
-
-The goal isn't to find the "right" answer, but to ensure you've asked the right questions and examined your assumptions before deciding.
+With Gemini, analysis leaves your machine — don’t paste secrets you wouldn’t send to a third-party API. Use Ollama for local-only checks.
 
 ---
 
-## Contributing & Community
+## Example flow
 
-Have ideas for better ways to challenge thinking? Found new bias patterns? Want to improve the interruption logic?
+1. Mid-chat: “Sanity check that last answer — did you just agree with me too easily?”
+2. Host calls `critical_thinking` with the reply + your request (session id optional but nice).
+3. If `sessionTrend.riskTrend` is `escalating`, the host should say so up front.
+4. Later: “That pushback helped.” → `ethics_feedback` with `useful: true`.
 
-- 🐛 [Report Issues](https://github.com/your-repo/ethics-check-mcp/issues)
-- 💡 [Suggest Features](https://github.com/your-repo/ethics-check-mcp/discussions)  
-- 🔧 [Contribute Code](https://github.com/your-repo/ethics-check-mcp/pulls)
+---
+
+## Develop / verify
+
+```bash
+npm install
+cp env.example .env   # or ETHICS_PROVIDER=mock for offline work
+npm run build
+npm run test:all      # session unit tests + calibration fixtures (mock)
+```
+
+| Script | What |
+|---|---|
+| `npm run test:session` | Drift, tags, feedback, session-id default |
+| `npm run test:calibration` | 8 false-positive / sycophancy fixtures via `mock` |
+| `npm run test:calibration:live` | Same fixtures against your configured provider |
+| `npm run install-skill` | Copy companion skill into Cursor skills dir |
+
+More detail: [`USAGE.md`](USAGE.md).
+
+---
+
+## Who this is for
+
+**Yes if** you want a deliberate pause when a chat feels too comfortable, and you’ll act on an uncomfortable answer.
+
+**No if** you want the model to always agree, or you need fully automatic enforcement with zero prompting — that’s a different product.
 
 ---
 
 ## License
 
-MIT © 2024 - Built for people who want AI to make them think harder, not just feel better.
+MIT © 2024–2026
 
-*"The point isn't to be right. The point is to be thoughtful."*
+*The point isn’t to be right. The point is to be thoughtful.*

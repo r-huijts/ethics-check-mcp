@@ -1,4 +1,10 @@
-import { addEthicalConcern, getCategoryStats, ETHICAL_CATEGORIES, EthicalCategory } from '../utils/storage.js';
+import {
+  addEthicalConcern,
+  getCategoryStats,
+  ETHICAL_CATEGORIES,
+  EthicalCategory,
+  deriveContextTags
+} from '../utils/storage.js';
 
 export interface EthicsLearnInput {
   concern: string;
@@ -29,13 +35,14 @@ export async function ethicsLearnTool(input: EthicsLearnInput): Promise<EthicsLe
     throw new Error(`Invalid category. Must be one of: ${ETHICAL_CATEGORIES.join(', ')}`);
   }
   
-  // Add the ethical concern
+  // Add the ethical concern (with derived tags so relevance scoring can actually use them)
   const added = addEthicalConcern({
     concern: input.concern,
     category: input.category,
     severity: input.severity,
     recommendation: input.recommendation,
-    sessionId: input.sessionId
+    sessionId: input.sessionId,
+    contextTags: deriveContextTags([input.concern, input.category, input.recommendation])
   });
   
   // Get updated statistics
