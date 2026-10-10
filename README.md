@@ -1,96 +1,34 @@
-# 🛡️ Ethics Vibe Check MCP
+# Ethics Vibe Check
 
-**A gut-check button for AI conversations.** Catch unwanted bias, sycophancy, or subtle drift before they harden into "obviously correct" answers.
+**A gut-check button for AI conversations.**
 
-*An MCP server that turns Claude (or any MCP host) into a philosophical sparring partner — on demand — by running an independent second-opinion model over the exchange.*
+MCP tools that run an independent second-opinion model over an exchange so you can catch sycophancy, confirmation bias, or quiet drift — when you ask, not as ambient surveillance.
 
 [![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
 [![npm version](https://img.shields.io/npm/v/@r-huijts/ethics-vibe-check.svg)](https://www.npmjs.com/package/@r-huijts/ethics-vibe-check)
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+Package: [`@r-huijts/ethics-vibe-check`](https://www.npmjs.com/package/@r-huijts/ethics-vibe-check) · Repo: [`r-huijts/ethics-check-mcp`](https://github.com/r-huijts/ethics-check-mcp)
 
 ---
 
-## The Problem
+## What it is
 
-AI assistants are trained to be helpful. In practice that often means they agree too easily, reinforce your framing, and let a conversation quietly drift toward whatever you already believe.
+LLMs are trained to be helpful. That often means they agree too easily and let a chat slide toward whatever you already believe.
 
-You don't need a background daemon yelling about ethics on every turn. You need a reliable way to **pause mid-conversation and ask: did something off creep in?**
+This server does **not** intercept every turn. It exposes tools you (or your host, when you ask) call mid-conversation:
 
-That's what this is — a set of tools you (or your host model, when you ask) can invoke when something feels sticky, one-sided, or too comfortable.
+> “Sanity check that.” · “Play devil’s advocate.” · “Are we drifting?”
 
----
-
-## How It Works (Honest Version)
-
-1. **You trigger it.** Ask for a sanity check, devil's advocate, or `@ethics-check` / `@critical-thinking` mid-chat. These are MCP tools — they run when called, not as ambient interception.
-2. **A second model grades the exchange.** Independent of the host model — default Gemini, or local **Ollama** via `ETHICS_PROVIDER=ollama`.
-3. **Drift via `sessionId`.** Reuse one id across checks to get `sessionTrend` (`escalating` / `improving` / `stable`). If the host omits it, a **process-scoped default** is used (one MCP process ≈ one chat).
-4. **Optional learning.** Concerns can be stored (with derived context tags); rate them with `ethics_feedback`. Storage: `~/.ethics-vibe-check/data` (overridable).
-
-### Companion skill (recommended)
-
-```bash
-# after npm install -g, or from a clone:
-npm run install-skill
-# or: npx -y -p @r-huijts/ethics-vibe-check ethics-vibe-check-install-skill
-```
-
-Copies [`skills/ethics-vibe-check/SKILL.md`](skills/ethics-vibe-check/SKILL.md) → `~/.cursor/skills/ethics-vibe-check/`. Prefer the skill over a fat always-on rule. Optional checkpoint templates: [`docs/system-prompts.md`](docs/system-prompts.md).
+A **second model** grades the exchange. Reuse (or omit) a session id to get a **`sessionTrend`** — `escalating` / `improving` / `stable` — so creep shows up as a signal, not a pile of disconnected snapshots.
 
 ---
 
-## Tools
+## Quick start
 
-### 🛡️ `ethics_check`
-Scan an exchange across privacy, bias, transparency, fairness, manipulation, confirmation bias, and related dimensions. Returns concerns, overall risk, and (with `sessionId`) a `sessionTrend`.
+### 1. MCP server
 
-### 🧠 `critical_thinking`
-Focused confirmation-bias / intellectual-rigor pass. Surfaces missing counterarguments, overly agreeable phrasing, and reflection questions for *you* as well as the model. Also returns `sessionTrend` when `sessionId` is set.
-
-### 🧭 `ethics_guide`
-Multi-framework guidance (utilitarian, deontological, virtue, care, justice) when you're stuck on a dilemma — not a mid-chat vibe check, but useful when the question itself is ethical.
-
-### 📚 `ethics_learn`
-Manually log a concern for future pattern weighting. Usually unnecessary if `autoStore` is left on for `ethics_check`.
-
-### 👍 `ethics_feedback`
-Thumbs-up/down on a prior recommendation. Closes the learning loop so `successScore` weighting reflects what actually helped (instead of silently defaulting forever).
-
----
-
-## Quick Examples
-
-**User-triggered mid-conversation:**
-> "Sanity check that last answer — did you just agree with me too easily?"
->
-> → host calls `critical_thinking` with the last response + your request + a session id
-
-**Drift across a long chat:**
-> Run `ethics_check` early (risk: low), again after the topic gets heated (risk: medium), again later (risk: high).
->
-> → `sessionTrend.riskTrend` becomes `"escalating"` with a short summary of the creep
-
-**Customize what you're hunting:**
-Add a short rule to Cursor / Claude custom instructions (full guide: [`docs/system-prompts.md`](docs/system-prompts.md)):
-
-```markdown
-## Ethics vibe check
-When I ask to sanity-check, play devil's advocate, or check for drift:
-- Call ethics_check or critical_thinking
-- Always pass a stable sessionId for this conversation
-- Surface the sessionTrend summary if risk is escalating
-- If I say the pushback helped / didn't, call ethics_feedback
-Challenge me on: [your typical biases]
-```
-
----
-
-## Installation
-
-### One-click (Cursor)
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/install-mcp?name=ethics-vibe-check&config=eyJjb21tYW5kIjoibnB4IC15IEByLWh1aWp0cy9ldGhpY3MtdmliZS1jaGVjayJ9)
-
-### Manual MCP config
+**Cursor one-click** (above) installs the server command only. Afterward, open MCP settings and add env (Gemini by default):
 
 ```json
 {
@@ -107,7 +45,7 @@ Challenge me on: [your typical biases]
 }
 ```
 
-Local second opinion (no cloud):
+**Local second opinion** (no cloud):
 
 ```json
 "env": {
@@ -117,66 +55,111 @@ Local second opinion (no cloud):
 }
 ```
 
-### Direct
+**CLI:**
 
 ```bash
 npm install -g @r-huijts/ethics-vibe-check
-ethics-vibe-check-install-skill   # companion Cursor skill → ~/.cursor/skills/
 npx @r-huijts/ethics-vibe-check
 ```
 
-See [`env.example`](env.example) for `ETHICS_PROVIDER`, `ETHICS_MODEL`, `ETHICS_DATA_DIR`, `ETHICS_SESSION_ID`.
+Full env reference: [`env.example`](env.example).
 
-> With `ETHICS_PROVIDER=gemini` (default), analysis is sent to Google. Don't paste secrets you wouldn't send to a third-party API. Use Ollama for local-only checks.
+### 2. Companion skill (recommended)
+
+The skill teaches the host *when* to call tools, how to treat `sessionTrend`, and when to record feedback. Prefer it over a fat always-on rule.
+
+```bash
+# global install:
+ethics-vibe-check-install-skill
+
+# from a clone / local package:
+npm run install-skill
+
+# one-shot without a global install:
+npx -y -p @r-huijts/ethics-vibe-check ethics-vibe-check-install-skill
+```
+
+Installs [`skills/ethics-vibe-check/SKILL.md`](skills/ethics-vibe-check/SKILL.md) → `~/.cursor/skills/ethics-vibe-check/` (override with `CURSOR_SKILLS_DIR`).
+
+Optional always-on checkpoint templates: [`docs/system-prompts.md`](docs/system-prompts.md).
 
 ---
 
-## What Changed Conceptually (for returning users)
+## Tools
 
-| Old framing | Current framing |
+| Tool | Use when |
 |---|---|
-| "Works automatically in the background" | User-triggered (or skill/rule-triggered) on demand |
-| Gemini-only | `ETHICS_PROVIDER=gemini\|ollama\|mock` |
-| Disconnected risk snapshots | `sessionTrend` (+ process-default `sessionId` if omitted) |
-| Skill missing after npm install | `npm run install-skill` / `ethics-vibe-check-install-skill` |
-| Prompts that hunt for guilt | Calibrated prompts + `npm run test:calibration` fixtures |
-| Storage under `process.cwd()/.ethics-data` | `~/.ethics-vibe-check/data` |
-| `successScore` never updated | `ethics_feedback` closes the loop |
+| `ethics_check` | Broader scan of an exchange (bias, privacy, manipulation, confirmation bias, …). Returns `overallRisk`, concerns (may be empty), `sessionTrend`. |
+| `critical_thinking` | Focused sycophancy / one-sidedness pass on one AI reply. Returns `confirmationBiasRisk`, `sessionTrend`. |
+| `ethics_guide` | Multi-framework advice for a dilemma (not a mid-chat vibe check). |
+| `ethics_learn` | Manually log a concern. Usually unnecessary if `autoStore` is on. |
+| `ethics_feedback` | Thumbs-up/down on a prior recommendation so `successScore` weighting reflects what helped. |
+
+**Session / drift**
+
+- Pass the same `sessionId` across checks in one chat when you can.
+- If omitted, the server uses a **process-scoped default** (typical MCP hosts run one process per conversation).
+- Override with `ETHICS_SESSION_ID` for evals or known ids.
+
+**Calibration**
+
+Prompts are written so ordinary helpful replies can return **low risk and empty findings**. Empty is a valid gut-check result — not a failure.
 
 ---
 
-## Not for Everyone
+## Providers
 
-**Useful if you:**
-- Want a deliberate pause button when a chat feels too comfortable
-- Prefer uncomfortable questions over tidy agreement
-- Are willing to re-examine your own framing
+| `ETHICS_PROVIDER` | Needs | Notes |
+|---|---|---|
+| `gemini` (default) | `GEMINI_API_KEY` | Cloud second opinion. Optional `ETHICS_MODEL` / `GEMINI_MODEL`. |
+| `ollama` | Local Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` or `ETHICS_MODEL`. |
+| `mock` | nothing | Deterministic offline answers for tests/demos only. |
 
-**Skip if you:**
-- Just want the model to agree and move on
-- Prefer never being interrupted mid-flow
-- Want fully automatic enforcement with zero prompting (that's a different product)
+Storage defaults to `~/.ethics-vibe-check/data` (`ETHICS_DATA_DIR` to override).
 
----
-
-## Philosophy
-
-As AI gets better at sounding right, the skill that matters is noticing when a conversation has quietly stopped being rigorous. This tool doesn't make you more "ethical" by decree — it gives you a structured way to ask harder questions of an exchange that already happened.
-
-**The point isn't to be right. The point is to be thoughtful.**
+With Gemini, analysis leaves your machine — don’t paste secrets you wouldn’t send to a third-party API. Use Ollama for local-only checks.
 
 ---
 
-## Contributing
+## Example flow
 
-Ideas for better drift signals, bias patterns, or prompt framing welcome:
+1. Mid-chat: “Sanity check that last answer — did you just agree with me too easily?”
+2. Host calls `critical_thinking` with the reply + your request (session id optional but nice).
+3. If `sessionTrend.riskTrend` is `escalating`, the host should say so up front.
+4. Later: “That pushback helped.” → `ethics_feedback` with `useful: true`.
 
-- 🐛 [Report Issues](https://github.com/r-huijts/ethics-check-mcp/issues)
-- 💡 [Suggest Features](https://github.com/r-huijts/ethics-check-mcp/discussions)
-- 🔧 [Contribute Code](https://github.com/r-huijts/ethics-check-mcp/pulls)
+---
+
+## Develop / verify
+
+```bash
+npm install
+cp env.example .env   # or ETHICS_PROVIDER=mock for offline work
+npm run build
+npm run test:all      # session unit tests + calibration fixtures (mock)
+```
+
+| Script | What |
+|---|---|
+| `npm run test:session` | Drift, tags, feedback, session-id default |
+| `npm run test:calibration` | 8 false-positive / sycophancy fixtures via `mock` |
+| `npm run test:calibration:live` | Same fixtures against your configured provider |
+| `npm run install-skill` | Copy companion skill into Cursor skills dir |
+
+More detail: [`USAGE.md`](USAGE.md).
+
+---
+
+## Who this is for
+
+**Yes if** you want a deliberate pause when a chat feels too comfortable, and you’ll act on an uncomfortable answer.
+
+**No if** you want the model to always agree, or you need fully automatic enforcement with zero prompting — that’s a different product.
 
 ---
 
 ## License
 
-MIT © 2024–2026 — Built for people who want AI to make them think harder, not just feel better.
+MIT © 2024–2026
+
+*The point isn’t to be right. The point is to be thoughtful.*
